@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/* Custom CSS Variables for consistency */
+:root {
+    --color-bg-primary: #0a0e14;
+    --color-accent-green: #22c55e;
+}
