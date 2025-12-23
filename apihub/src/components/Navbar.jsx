@@ -1,7 +1,6 @@
 const Navbar = () => {
     return (
         <nav className="flex justify-between items-center px-12 py-6 relative z-50">
-            {/* Logo */}
             <a href="/" className="flex items-center gap-3 text-2xl font-semibold text-white no-underline">
                 <span className="w-8 h-8 flex items-center justify-center">
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
@@ -18,7 +17,6 @@ const Navbar = () => {
                 <span>APIHub</span>
             </a>
 
-            {/* Login Button */}
             <div className="flex items-center gap-6">
                 <button className="px-7 py-2.5 rounded-full bg-green-500 text-gray-900 font-semibold text-sm border-none cursor-pointer transition-all duration-300 hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/30">
                     Login
