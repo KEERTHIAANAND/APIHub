@@ -16,7 +16,7 @@ const LoginPage = () => {
 
         const result = login(email, password);
         if (result.success) {
-            navigate('/dashboard');
+            navigate(result.role === 'admin' ? '/admin' : '/dashboard');
         } else {
             setError(result.error);
         }
@@ -25,7 +25,7 @@ const LoginPage = () => {
     const handleGoogleLogin = () => {
         const result = loginWithGoogle();
         if (result.success) {
-            navigate('/dashboard');
+            navigate(result.role === 'admin' ? '/admin' : '/dashboard');
         }
     };
 
@@ -87,8 +87,10 @@ const LoginPage = () => {
                         {/* Demo Credentials Info */}
                         <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-6">
                             <p className="text-blue-400 text-sm font-medium mb-2">Demo Credentials:</p>
-                            <p className="text-gray-400 text-xs">Email: <span className="text-white font-mono">demo@apihub.com</span></p>
-                            <p className="text-gray-400 text-xs">Password: <span className="text-white font-mono">demo123</span></p>
+                            <div className="space-y-1">
+                                <p className="text-gray-400 text-xs"><span className="text-gray-500">User:</span> <span className="text-white font-mono">demo@apihub.com</span> / <span className="text-white font-mono">demo123</span></p>
+                                <p className="text-gray-400 text-xs"><span className="text-purple-400">Admin:</span> <span className="text-white font-mono">admin@apihub.com</span> / <span className="text-white font-mono">admin123</span></p>
+                            </div>
                         </div>
 
                         {/* Error Message */}
