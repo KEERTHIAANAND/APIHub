@@ -4,6 +4,7 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/AdminDashboard';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -14,11 +15,23 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Public Route - redirects to dashboard if already logged in
-const PublicRoute = ({ children }) => {
-  const { user } = useAuth();
-  if (user) {
+// Admin Route Component - only accessible by admin users
+const AdminRoute = ({ children }) => {
+  const { user, isAdmin } = useAuth();
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  if (!isAdmin()) {
     return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
+
+// Public Route - redirects to appropriate dashboard if already logged in
+const PublicRoute = ({ children }) => {
+  const { user, isAdmin } = useAuth();
+  if (user) {
+    return <Navigate to={isAdmin() ? "/admin" : "/dashboard"} replace />;
   }
   return children;
 };
@@ -49,6 +62,14 @@ function AppRoutes() {
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
         }
       />
     </Routes>
