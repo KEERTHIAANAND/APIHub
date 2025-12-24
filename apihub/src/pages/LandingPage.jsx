@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ParticleSphere from '../components/ParticleSphere';
 
@@ -21,14 +22,18 @@ const LandingPage = () => {
                         <p className="text-lg text-gray-400 mb-10 max-w-md leading-relaxed">
                             Our centralized API management platform tracks and audits 100% of API requests, providing complete visibility and access control beyond what typical custom-built systems offer.
                         </p>
-                        <div className="flex flex-wrap gap-4">
-                            <button className="px-8 py-3.5 rounded-full bg-green-500 text-gray-900 font-semibold text-base border-none cursor-pointer transition-all duration-300 hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/35">
-                                Try Free
-                            </button>
-                            <button className="px-8 py-3.5 rounded-full bg-transparent text-white font-semibold text-base border border-gray-700 cursor-pointer transition-all duration-300 hover:bg-white/5 hover:border-gray-500 hover:-translate-y-0.5">
-                                Contact Sales
-                            </button>
-                        </div>
+                        <Link
+                            to="/signup"
+                            className="px-8 py-3.5 rounded-xl bg-green-500 text-gray-900 font-semibold text-base border-none cursor-pointer transition-all duration-300 hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/35 flex items-center gap-2 no-underline inline-flex"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <line x1="19" y1="8" x2="19" y2="14"></line>
+                                <line x1="22" y1="11" x2="16" y2="11"></line>
+                            </svg>
+                            Sign Up
+                        </Link>
                     </div>
 
                     {/* Hero Visual */}
