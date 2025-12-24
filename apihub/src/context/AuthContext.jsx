@@ -7,8 +7,8 @@ export const AuthProvider = ({ children }) => {
 
     // Demo credentials
     const DEMO_USERS = [
-        { email: 'demo@apihub.com', password: 'demo123', name: 'Demo User' },
-        { email: 'admin@apihub.com', password: 'admin123', name: 'Admin User' }
+        { email: 'demo@apihub.com', password: 'demo123', name: 'Demo User', role: 'user' },
+        { email: 'admin@apihub.com', password: 'admin123', name: 'Alex Administrator', role: 'admin' }
     ];
 
     const login = (email, password) => {
@@ -17,30 +17,38 @@ export const AuthProvider = ({ children }) => {
         );
 
         if (foundUser) {
-            setUser({ email: foundUser.email, name: foundUser.name });
-            return { success: true };
+            setUser({
+                email: foundUser.email,
+                name: foundUser.name,
+                role: foundUser.role
+            });
+            return { success: true, role: foundUser.role };
         }
         return { success: false, error: 'Invalid email or password' };
     };
 
     const loginWithGoogle = () => {
         // Simulate Google login with a demo user
-        setUser({ email: 'google.user@gmail.com', name: 'Google User' });
-        return { success: true };
+        setUser({ email: 'google.user@gmail.com', name: 'Google User', role: 'user' });
+        return { success: true, role: 'user' };
     };
 
     const signup = (fullName, email) => {
         // Simulate signup - in real app, this would create account
-        setUser({ email, name: fullName });
-        return { success: true };
+        setUser({ email, name: fullName, role: 'user' });
+        return { success: true, role: 'user' };
     };
 
     const logout = () => {
         setUser(null);
     };
 
+    const isAdmin = () => {
+        return user?.role === 'admin';
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, loginWithGoogle, signup, logout }}>
+        <AuthContext.Provider value={{ user, login, loginWithGoogle, signup, logout, isAdmin }}>
             {children}
         </AuthContext.Provider>
     );
