@@ -58,43 +58,9 @@ const Dashboard = () => {
                     <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
                         Welcome, <span className="text-green-500">{user?.name}</span>! 🎉
                     </h1>
-                    <p className="text-lg text-gray-400 mb-8 leading-relaxed">
+                    <p className="text-lg text-gray-400 leading-relaxed">
                         You've successfully logged in to APIHub. Your centralized API management dashboard is ready to help you build, secure, and monitor your APIs.
                     </p>
-
-                    {/* Quick Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                        <div className="bg-[#111827]/80 backdrop-blur-xl border border-gray-800 rounded-xl p-6">
-                            <div className="text-3xl font-bold text-green-500 mb-2">0</div>
-                            <div className="text-gray-400 text-sm">APIs Connected</div>
-                        </div>
-                        <div className="bg-[#111827]/80 backdrop-blur-xl border border-gray-800 rounded-xl p-6">
-                            <div className="text-3xl font-bold text-blue-500 mb-2">0</div>
-                            <div className="text-gray-400 text-sm">Total Requests</div>
-                        </div>
-                        <div className="bg-[#111827]/80 backdrop-blur-xl border border-gray-800 rounded-xl p-6">
-                            <div className="text-3xl font-bold text-purple-500 mb-2">100%</div>
-                            <div className="text-gray-400 text-sm">Uptime</div>
-                        </div>
-                    </div>
-
-                    {/* CTA Buttons */}
-                    <div className="flex flex-wrap justify-center gap-4">
-                        <button className="px-8 py-3 rounded-xl bg-green-500 text-gray-900 font-semibold text-base border-none cursor-pointer transition-all duration-300 hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/35 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            Add Your First API
-                        </button>
-                        <button className="px-8 py-3 rounded-xl bg-transparent text-white font-semibold text-base border border-gray-700 cursor-pointer transition-all duration-300 hover:bg-white/5 hover:border-gray-500 hover:-translate-y-0.5 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polygon points="10 8 16 12 10 16 10 8"></polygon>
-                            </svg>
-                            Watch Tutorial
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
