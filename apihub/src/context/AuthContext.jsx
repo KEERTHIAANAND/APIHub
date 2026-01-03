@@ -5,10 +5,10 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
 
-    // Demo credentials
+    // Demo credentials for UI testing (not shown in login form)
     const DEMO_USERS = [
         { email: 'demo@apihub.com', password: 'demo123', name: 'Demo User', role: 'user' },
-        { email: 'admin@apihub.com', password: 'admin123', name: 'Alex Administrator', role: 'admin' }
+        { email: 'admin@apihub.com', password: 'admin123', name: 'Admin User', role: 'admin' }
     ];
 
     const login = (email, password) => {
@@ -33,8 +33,8 @@ export const AuthProvider = ({ children }) => {
         return { success: true, role: 'user' };
     };
 
-    const signup = (fullName, email) => {
-        // Simulate signup - in real app, this would create account
+    const signup = (fullName, email, password) => {
+        // Simulate signup for UI testing
         setUser({ email, name: fullName, role: 'user' });
         return { success: true, role: 'user' };
     };
