@@ -101,7 +101,7 @@ const ParticleSphere = () => {
                 const normalizedX = (p.screenX + canvas.width * 0.4) / (canvas.width * 0.8);
 
                 const hue = 180 + normalizedY * 60 + normalizedX * 40;
-                const saturation = 70 + scale * 20;
+                const saturation = 80    + scale * 20;
                 const lightness = 50 + scale * 20;
 
                 ctx.beginPath();
