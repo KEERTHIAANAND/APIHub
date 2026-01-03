@@ -28,9 +28,11 @@ const SignupPage = () => {
             return;
         }
 
-        const result = signup(formData.fullName, formData.email);
+        const result = signup(formData.fullName, formData.email, formData.password);
         if (result.success) {
             navigate('/dashboard');
+        } else {
+            setError(result.error);
         }
     };
 
@@ -38,6 +40,8 @@ const SignupPage = () => {
         const result = loginWithGoogle();
         if (result.success) {
             navigate('/dashboard');
+        } else {
+            setError(result.error);
         }
     };
 
@@ -116,6 +120,13 @@ const SignupPage = () => {
                             <span className="text-gray-500 text-xs">or sign up with email</span>
                             <div className="flex-1 h-px bg-gray-700"></div>
                         </div>
+
+                        {/* Error Message */}
+                        {error && (
+                            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
+                                <p className="text-red-400 text-sm">{error}</p>
+                            </div>
+                        )}
 
                         {/* Signup Form */}
                         <form onSubmit={handleSubmit} className="space-y-3">

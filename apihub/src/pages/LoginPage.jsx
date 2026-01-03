@@ -26,6 +26,8 @@ const LoginPage = () => {
         const result = loginWithGoogle();
         if (result.success) {
             navigate(result.role === 'admin' ? '/admin' : '/dashboard');
+        } else {
+            setError(result.error);
         }
     };
 
@@ -84,14 +86,6 @@ const LoginPage = () => {
                         <h2 className="text-2xl font-bold text-white mb-2">Sign In</h2>
                         <p className="text-gray-400 mb-6">Enter your credentials to access your account</p>
 
-                        {/* Demo Credentials Info */}
-                        <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mb-6">
-                            <p className="text-blue-400 text-sm font-medium mb-2">Demo Credentials:</p>
-                            <div className="space-y-1">
-                                <p className="text-gray-400 text-xs"><span className="text-gray-500">User:</span> <span className="text-white font-mono">demo@apihub.com</span> / <span className="text-white font-mono">demo123</span></p>
-                                <p className="text-gray-400 text-xs"><span className="text-purple-400">Admin:</span> <span className="text-white font-mono">admin@apihub.com</span> / <span className="text-white font-mono">admin123</span></p>
-                            </div>
-                        </div>
 
                         {/* Error Message */}
                         {error && (
