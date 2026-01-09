@@ -22,3 +22,18 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files - NEVER commit these!
+.env
+.env.local
+.env.production
+.env.development
+server/.env
+
+# Firebase credentials - NEVER commit!
+server/config/firebase-service-account.json
+firebase-service-account.json
+*-service-account.json
+
+# Agent workflows (optional - remove if you want to track)
+.agent/
