@@ -12,6 +12,7 @@ const SignupPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const { signup, loginWithGoogle } = useAuth();
     const navigate = useNavigate();
 
@@ -19,7 +20,7 @@ const SignupPage = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
@@ -28,20 +29,35 @@ const SignupPage = () => {
             return;
         }
 
-        const result = signup(formData.fullName, formData.email, formData.password);
-        if (result.success) {
-            navigate('/dashboard');
-        } else {
-            setError(result.error);
+        setIsLoading(true);
+        try {
+            const result = await signup(formData.fullName, formData.email, formData.password);
+            if (result.success) {
+                navigate('/dashboard');
+            } else {
+                setError(result.error);
+            }
+        } catch (err) {
+            setError(err.message || 'Signup failed');
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const handleGoogleSignup = () => {
-        const result = loginWithGoogle();
-        if (result.success) {
-            navigate('/dashboard');
-        } else {
-            setError(result.error);
+    const handleGoogleSignup = async () => {
+        setError('');
+        setIsLoading(true);
+        try {
+            const result = await loginWithGoogle();
+            if (result.success) {
+                navigate(result.role === 'admin' ? '/admin' : '/dashboard');
+            } else {
+                setError(result.error);
+            }
+        } catch (err) {
+            setError(err.message || 'Google signup failed');
+        } finally {
+            setIsLoading(false);
         }
     };
 
