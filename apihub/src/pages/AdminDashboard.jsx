@@ -73,10 +73,22 @@ const AdminDashboard = () => {
         }
     };
 
-    // Get the title for current active section
-    const getPageTitle = () => {
-        const item = navItems.find(nav => nav.id === activeNav);
-        return item ? item.label : 'Dashboard';
+    // Get the title and subtitle for current active section
+    const getPageInfo = () => {
+        switch (activeNav) {
+            case 'overview':
+                return { title: 'Overview', subtitle: 'Monitor your API performance and analytics.' };
+            case 'api-management':
+                return { title: 'API Management', subtitle: 'Create and manage your API endpoints.' };
+            case 'data-management':
+                return { title: 'Data Management', subtitle: 'Upload and configure your datasets.' };
+            case 'access-keys':
+                return { title: 'Access Keys', subtitle: 'Manage API keys and access control.' };
+            case 'audit-logs':
+                return { title: 'Audit Logs', subtitle: 'Track all system activities and changes.' };
+            default:
+                return { title: 'Dashboard', subtitle: 'Welcome to your admin dashboard.' };
+        }
     };
 
     // Render the content based on active navigation
@@ -159,26 +171,29 @@ const AdminDashboard = () => {
             {/* Main Content - Light Theme */}
             <main className="flex-1 flex flex-col overflow-hidden bg-white">
                 {/* Header */}
-                <header className="flex items-center justify-between px-8 py-5 border-b border-gray-200 bg-white">
-                    <h1 className="text-xl font-semibold text-gray-900">{getPageTitle()}</h1>
+                <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
+                    <div>
+                        <h1 className="text-lg font-bold text-gray-900">{getPageInfo().title}</h1>
+                        <p className="text-xs text-gray-500">{getPageInfo().subtitle}</p>
+                    </div>
                     <div className="flex items-center gap-4">
                         <div className="relative">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                                 <circle cx="11" cy="11" r="8"></circle>
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                             </svg>
                             <input
                                 type="text"
                                 placeholder="Search..."
-                                className="pl-10 pr-4 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 w-48 transition-all"
+                                className="pl-9 pr-4 py-1.5 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 w-44 transition-all"
                             />
                         </div>
-                        <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors bg-transparent border-none cursor-pointer relative">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <button className="p-1.5 text-gray-500 hover:text-gray-700 transition-colors bg-transparent border-none cursor-pointer relative">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                             </svg>
-                            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                            <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
                         </button>
                     </div>
                 </header>
