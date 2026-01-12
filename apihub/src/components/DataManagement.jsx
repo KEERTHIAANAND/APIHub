@@ -1,18 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { adminAPI } from '../services/api';
 
 const DataManagement = () => {
     const [showModal, setShowModal] = useState(false);
+    const [modalMode, setModalMode] = useState('manual'); // 'manual' or 'upload'
     const [modalStep, setModalStep] = useState(1);
     const [selectedDataset, setSelectedDataset] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [error, setError] = useState(null);
+    const fileInputRef = useRef(null);
 
     // Datasets state - fetched from backend
     const [datasets, setDatasets] = useState([]);
 
-    // Form state for new dataset
+    // File upload state
+    const [uploadFile, setUploadFile] = useState(null);
+    const [uploadPreview, setUploadPreview] = useState(null);
+    const [uploadName, setUploadName] = useState('');
+    const [uploadDescription, setUploadDescription] = useState('');
+
+    // Form state for new dataset (manual entry)
     const [formData, setFormData] = useState({
         datasetName: '',
         description: '',
@@ -41,7 +50,6 @@ const DataManagement = () => {
                 setDatasets(response.datasets);
                 // Select first dataset by default
                 if (response.datasets.length > 0 && !selectedDataset) {
-                    // Fetch full dataset with data
                     const fullDataset = await adminAPI.getDataset(response.datasets[0]._id);
                     if (fullDataset.success) {
                         setSelectedDataset(fullDataset.dataset);
@@ -59,13 +67,107 @@ const DataManagement = () => {
 
     const handleSelectDataset = async (dataset) => {
         try {
-            // Fetch full dataset with data
             const response = await adminAPI.getDataset(dataset._id);
             if (response.success) {
                 setSelectedDataset(response.dataset);
             }
         } catch (err) {
             console.error('Failed to fetch dataset:', err);
+        }
+    };
+
+    // File upload handlers
+    const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const validTypes = [
+            'application/json',
+            'text/csv',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ];
+
+        const ext = file.name.split('.').pop().toLowerCase();
+        const isValid = validTypes.includes(file.type) || ['json', 'csv', 'xlsx', 'xls'].includes(ext);
+
+        if (!isValid) {
+            alert('Please select a JSON, CSV, or Excel file');
+            return;
+        }
+
+        setUploadFile(file);
+        setUploadName(file.name.replace(/\.[^/.]+$/, "")); // Remove extension
+
+        // Preview for JSON files
+        if (ext === 'json' || file.type === 'application/json') {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    const preview = Array.isArray(data) ? data.slice(0, 5) : [data];
+                    setUploadPreview(preview);
+                } catch (err) {
+                    console.error('Error parsing JSON:', err);
+                    setUploadPreview(null);
+                }
+            };
+            reader.readAsText(file);
+        } else if (ext === 'csv') {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const lines = e.target.result.split('\n').filter(l => l.trim());
+                    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                    const preview = lines.slice(1, 6).map(line => {
+                        const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+                        const obj = {};
+                        headers.forEach((h, i) => obj[h] = values[i] || '');
+                        return obj;
+                    });
+                    setUploadPreview(preview);
+                } catch (err) {
+                    console.error('Error parsing CSV:', err);
+                    setUploadPreview(null);
+                }
+            };
+            reader.readAsText(file);
+        } else {
+            setUploadPreview(null);
+        }
+    };
+
+    const handleUploadDataset = async () => {
+        if (!uploadFile || !uploadName.trim()) {
+            alert('Please select a file and provide a name');
+            return;
+        }
+
+        setUploading(true);
+        setError(null);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', uploadFile);
+            formData.append('name', uploadName);
+            formData.append('description', uploadDescription);
+
+            const response = await adminAPI.uploadDataset(formData);
+
+            if (response.success) {
+                await fetchDatasets();
+                const fullDataset = await adminAPI.getDataset(response.dataset._id);
+                if (fullDataset.success) {
+                    setSelectedDataset(fullDataset.dataset);
+                }
+                handleCloseModal();
+            } else {
+                setError(response.error || 'Failed to upload dataset');
+            }
+        } catch (err) {
+            setError(err.message || 'Failed to upload dataset');
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -104,7 +206,6 @@ const DataManagement = () => {
     };
 
     const handleNextStep = () => {
-        // Initialize items array based on initialItems count
         const items = [];
         for (let i = 0; i < formData.initialItems; i++) {
             const item = {};
@@ -134,9 +235,7 @@ const DataManagement = () => {
             });
 
             if (response.success) {
-                // Refresh datasets list
                 await fetchDatasets();
-                // Select the new dataset
                 const fullDataset = await adminAPI.getDataset(response.dataset._id);
                 if (fullDataset.success) {
                     setSelectedDataset(fullDataset.dataset);
@@ -170,9 +269,20 @@ const DataManagement = () => {
         }
     };
 
+    const handleOpenModal = (mode) => {
+        setModalMode(mode);
+        setShowModal(true);
+    };
+
     const handleCloseModal = () => {
         setShowModal(false);
         setModalStep(1);
+        setModalMode('manual');
+        setUploadFile(null);
+        setUploadPreview(null);
+        setUploadName('');
+        setUploadDescription('');
+        setError(null);
         setFormData({
             datasetName: '',
             description: '',
@@ -201,7 +311,6 @@ const DataManagement = () => {
         }
     };
 
-    // Get fields from schema or data
     const getDatasetFields = (dataset) => {
         if (dataset.schema) {
             return Object.entries(dataset.schema).map(([name, type]) => ({ name, type }));
@@ -228,22 +337,37 @@ const DataManagement = () => {
 
     return (
         <div className="flex-1 overflow-hidden flex flex-col">
-            {/* Header - Only Add Dataset Button */}
+            {/* Header */}
             <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white">
                 {error && (
                     <div className="text-sm text-red-500">{error}</div>
                 )}
                 <div className="flex-1"></div>
-                <button
-                    onClick={() => setShowModal(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 border-none rounded-lg text-white text-sm font-medium cursor-pointer transition-all hover:bg-blue-600 shadow-sm hover:shadow-md"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Add Dataset
-                </button>
+                <div className="flex items-center gap-2">
+                    {/* Upload Button */}
+                    <button
+                        onClick={() => handleOpenModal('upload')}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm font-medium cursor-pointer transition-all hover:bg-gray-50 hover:border-gray-400"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Upload File
+                    </button>
+                    {/* Manual Entry Button */}
+                    <button
+                        onClick={() => handleOpenModal('manual')}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 border-none rounded-lg text-white text-sm font-medium cursor-pointer transition-all hover:bg-blue-600 shadow-sm hover:shadow-md"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Dataset
+                    </button>
+                </div>
             </div>
 
             {/* Main Content */}
@@ -269,15 +393,12 @@ const DataManagement = () => {
                                         </div>
                                         <div className="text-xs text-gray-500 mt-0.5">
                                             {dataset.recordCount} records
+                                            {dataset.fileType && (
+                                                <span className="ml-1 text-gray-400">• {dataset.fileType.toUpperCase()}</span>
+                                            )}
                                         </div>
                                     </div>
-                                    {selectedDataset?._id === dataset._id && (
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
-                                            <polyline points="9 18 15 12 9 6"></polyline>
-                                        </svg>
-                                    )}
                                 </button>
-                                {/* Delete button on hover */}
                                 <button
                                     onClick={() => handleDeleteDataset(dataset._id)}
                                     className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 bg-transparent border-none cursor-pointer transition-all"
@@ -302,14 +423,13 @@ const DataManagement = () => {
                 <div className="flex-1 overflow-auto bg-white p-6">
                     {selectedDataset ? (
                         <>
-                            {/* Dataset Header */}
                             <div className="flex items-start justify-between mb-6">
                                 <div>
                                     <h3 className="text-xl font-semibold text-gray-900 mb-1">{selectedDataset.name}</h3>
                                     {selectedDataset.description && (
                                         <p className="text-sm text-gray-500 mb-2">{selectedDataset.description}</p>
                                     )}
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap max-h-20 overflow-y-auto">
                                         {getDatasetFields(selectedDataset).map((field, idx) => (
                                             <span
                                                 key={idx}
@@ -325,40 +445,52 @@ const DataManagement = () => {
                                 </div>
                             </div>
 
-                            {/* Dataset Table */}
                             <div className="border border-gray-200 rounded-lg overflow-hidden">
-                                {/* Table Header */}
-                                {getDatasetFields(selectedDataset).length > 0 && (
-                                    <div
-                                        className="grid gap-4 px-5 py-3 bg-gray-50 border-b border-gray-200"
-                                        style={{ gridTemplateColumns: `repeat(${getDatasetFields(selectedDataset).length}, 1fr)` }}
-                                    >
-                                        {getDatasetFields(selectedDataset).map((field, idx) => (
-                                            <div key={idx} className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
-                                                {field.name}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                <div className="overflow-x-auto">
+                                    {getDatasetFields(selectedDataset).length > 0 && (
+                                        <table className="w-full min-w-max">
+                                            <thead className="bg-gray-50 border-b border-gray-200">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10">
+                                                        #
+                                                    </th>
+                                                    {getDatasetFields(selectedDataset).map((field, idx) => (
+                                                        <th key={idx} className="px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                                            {field.name}
+                                                        </th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-100">
+                                                {selectedDataset.data && selectedDataset.data.map((item, rowIdx) => (
+                                                    <tr key={rowIdx} className="hover:bg-gray-50/50 transition-colors">
+                                                        <td className="px-4 py-2.5 text-xs text-gray-400 font-mono sticky left-0 bg-white group-hover:bg-gray-50/50 z-10">
+                                                            {rowIdx + 1}
+                                                        </td>
+                                                        {getDatasetFields(selectedDataset).map((field, colIdx) => (
+                                                            <td key={colIdx} className="px-4 py-2.5 text-sm text-gray-700 font-mono whitespace-nowrap max-w-xs truncate" title={String(item[field.name] ?? '')}>
+                                                                {String(item[field.name] ?? '')}
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
 
-                                {/* Table Body */}
-                                {selectedDataset.data && selectedDataset.data.map((item, rowIdx) => (
-                                    <div
-                                        key={rowIdx}
-                                        className="grid gap-4 px-5 py-3 border-b border-gray-100 hover:bg-gray-50/50 transition-colors"
-                                        style={{ gridTemplateColumns: `repeat(${getDatasetFields(selectedDataset).length}, 1fr)` }}
-                                    >
-                                        {getDatasetFields(selectedDataset).map((field, colIdx) => (
-                                            <div key={colIdx} className="text-sm text-gray-700 font-mono">
-                                                {String(item[field.name] ?? '')}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ))}
+                                    {(!selectedDataset.data || selectedDataset.data.length === 0) && (
+                                        <div className="px-5 py-8 text-center text-gray-400 text-sm">
+                                            No records in this dataset
+                                        </div>
+                                    )}
+                                </div>
 
-                                {(!selectedDataset.data || selectedDataset.data.length === 0) && (
-                                    <div className="px-5 py-8 text-center text-gray-400 text-sm">
-                                        No records in this dataset
+                                {/* Footer with record count */}
+                                {selectedDataset.data && selectedDataset.data.length > 0 && (
+                                    <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 flex justify-between items-center">
+                                        <span>
+                                            Showing {selectedDataset.data.length} records • {getDatasetFields(selectedDataset).length} columns
+                                        </span>
                                     </div>
                                 )}
                             </div>
@@ -379,21 +511,19 @@ const DataManagement = () => {
                 </div>
             </div>
 
-            {/* Add Dataset Modal */}
+            {/* Modal */}
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center">
-                    {/* Backdrop */}
                     <div
                         className="absolute inset-0 bg-black/30 backdrop-blur-sm"
                         onClick={handleCloseModal}
                     ></div>
 
-                    {/* Modal */}
-                    <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 z-10">
+                    <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 z-10 max-h-[90vh] overflow-hidden flex flex-col">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
                             <h2 className="text-lg font-semibold text-gray-900">
-                                Add New Dataset <span className="text-gray-400 font-normal">// Step {modalStep}</span>
+                                {modalMode === 'upload' ? 'Upload Dataset' : 'Add New Dataset'}
                             </h2>
                             <button
                                 onClick={handleCloseModal}
@@ -406,10 +536,106 @@ const DataManagement = () => {
                             </button>
                         </div>
 
-                        {/* Modal Body - Step 1 */}
-                        {modalStep === 1 && (
-                            <div className="p-6 space-y-5">
+                        {/* Upload Mode */}
+                        {modalMode === 'upload' && (
+                            <div className="p-6 space-y-5 overflow-y-auto">
+                                {/* File Drop Zone */}
+                                <div
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all"
+                                >
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept=".json,.csv,.xlsx,.xls"
+                                        onChange={handleFileSelect}
+                                        className="hidden"
+                                    />
+                                    {uploadFile ? (
+                                        <div>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-green-500 mb-2">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                                <polyline points="9 15 12 12 15 15"></polyline>
+                                            </svg>
+                                            <p className="text-sm font-medium text-gray-900">{uploadFile.name}</p>
+                                            <p className="text-xs text-gray-500 mt-1">{(uploadFile.size / 1024).toFixed(1)} KB</p>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-gray-400 mb-2">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                <polyline points="17 8 12 3 7 8"></polyline>
+                                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                                            </svg>
+                                            <p className="text-sm font-medium text-gray-700">Click to upload or drag and drop</p>
+                                            <p className="text-xs text-gray-500 mt-1">JSON, CSV, or Excel files</p>
+                                        </div>
+                                    )}
+                                </div>
+
                                 {/* Dataset Name */}
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
+                                        Dataset Name *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={uploadName}
+                                        onChange={(e) => setUploadName(e.target.value)}
+                                        placeholder="e.g. Products Catalog"
+                                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                    />
+                                </div>
+
+                                {/* Description */}
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
+                                        Description
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={uploadDescription}
+                                        onChange={(e) => setUploadDescription(e.target.value)}
+                                        placeholder="Brief description"
+                                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                    />
+                                </div>
+
+                                {/* Preview */}
+                                {uploadPreview && (
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
+                                            Preview (First 5 rows)
+                                        </label>
+                                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 max-h-40 overflow-auto">
+                                            <pre className="text-xs text-gray-600 font-mono">
+                                                {JSON.stringify(uploadPreview, null, 2)}
+                                            </pre>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {error && (
+                                    <div className="text-sm text-red-500">{error}</div>
+                                )}
+
+                                {/* Upload Button */}
+                                <div className="flex justify-end pt-2">
+                                    <button
+                                        onClick={handleUploadDataset}
+                                        disabled={!uploadFile || !uploadName.trim() || uploading}
+                                        className="flex items-center gap-2 px-6 py-2.5 bg-blue-500 border-none rounded-lg text-white text-sm font-medium cursor-pointer transition-all hover:bg-blue-600 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {uploading ? 'Uploading...' : 'Upload Dataset'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Manual Entry Mode - Step 1 */}
+                        {modalMode === 'manual' && modalStep === 1 && (
+                            <div className="p-6 space-y-5 overflow-y-auto">
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
                                         Dataset Name
@@ -425,7 +651,6 @@ const DataManagement = () => {
                                     />
                                 </div>
 
-                                {/* Description */}
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
                                         Description (Optional)
@@ -440,7 +665,6 @@ const DataManagement = () => {
                                     />
                                 </div>
 
-                                {/* Number of Fields and Initial Items Row */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
@@ -470,7 +694,6 @@ const DataManagement = () => {
                                     </div>
                                 </div>
 
-                                {/* Field Definitions */}
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-900 mb-3">
                                         Field Definitions
@@ -504,7 +727,6 @@ const DataManagement = () => {
                                     </div>
                                 </div>
 
-                                {/* Next Button */}
                                 <div className="flex justify-end pt-2">
                                     <button
                                         onClick={handleNextStep}
@@ -521,14 +743,13 @@ const DataManagement = () => {
                             </div>
                         )}
 
-                        {/* Modal Body - Step 2 */}
-                        {modalStep === 2 && (
-                            <form onSubmit={handleCreateDataset} className="p-6 space-y-5">
+                        {/* Manual Entry Mode - Step 2 */}
+                        {modalMode === 'manual' && modalStep === 2 && (
+                            <form onSubmit={handleCreateDataset} className="p-6 space-y-5 overflow-y-auto">
                                 <p className="text-sm text-gray-600">
                                     Enter the initial data for your <strong>{formData.initialItems}</strong> items.
                                 </p>
 
-                                {/* Items */}
                                 <div className="space-y-4 max-h-80 overflow-y-auto">
                                     {formData.items.map((item, itemIdx) => (
                                         <div key={itemIdx} className="border border-gray-200 rounded-lg p-4">
@@ -555,7 +776,6 @@ const DataManagement = () => {
                                     ))}
                                 </div>
 
-                                {/* Footer Buttons */}
                                 <div className="flex items-center justify-between pt-2">
                                     <button
                                         type="button"
