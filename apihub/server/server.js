@@ -47,9 +47,9 @@ app.get('/api/health', (req, res) => {
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin/users', require('./routes/users'));
-// app.use('/api/admin/endpoints', require('./routes/endpoints'));
-// app.use('/api/admin/datasets', require('./routes/datasets'));
-// app.use('/api/admin/access-keys', require('./routes/apiKeys'));
+app.use('/api/admin/endpoints', require('./routes/endpoints'));
+app.use('/api/admin/datasets', require('./routes/datasets'));
+app.use('/api/admin/access-keys', require('./routes/apiKeys'));
 // app.use('/api/admin/audit', require('./routes/audit'));
 
 // 404 handler
