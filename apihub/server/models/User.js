@@ -58,9 +58,8 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Index for faster queries
-userSchema.index({ email: 1 });
-userSchema.index({ firebaseUid: 1 });
+// Note: email index is auto-created by unique:true
+// Note: firebaseUid uses sparse:true for unique null handling
 
 // Hash password before saving (only for local auth)
 userSchema.pre('save', async function (next) {
