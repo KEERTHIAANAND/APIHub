@@ -23,6 +23,7 @@ const protect = async (req, res, next) => {
         // First, try to verify as a Firebase token
         try {
             const decodedFirebase = await admin.auth().verifyIdToken(token);
+            console.log('✅ Firebase token verified in middleware');
 
             // Find user by Firebase UID
             let user = await User.findOne({ firebaseUid: decodedFirebase.uid });
@@ -45,13 +46,16 @@ const protect = async (req, res, next) => {
 
             req.user = user;
             req.authType = 'firebase';
+            console.log(`   User: ${user.email}, Role: ${user.role}`);
             return next();
         } catch (firebaseError) {
             // Not a valid Firebase token, try JWT
+            console.log('⚠️ Not a Firebase token, trying JWT...');
         }
 
         // Try to verify as a local JWT token
         const decoded = jwt.verify(token, config.jwtSecret);
+        console.log('✅ JWT token verified');
 
         const user = await User.findById(decoded.id);
 
@@ -71,9 +75,10 @@ const protect = async (req, res, next) => {
 
         req.user = user;
         req.authType = 'jwt';
+        console.log(`   User: ${user.email}, Role: ${user.role}`);
         next();
     } catch (error) {
-        console.error('Auth Error:', error.message);
+        console.error('❌ Auth Error:', error.message);
         return res.status(401).json({
             success: false,
             error: 'Not authorized to access this route'
