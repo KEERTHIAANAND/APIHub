@@ -77,6 +77,7 @@ export const adminAPI = {
 
     // Endpoints
     getEndpoints: () => apiRequest('/admin/endpoints'),
+    getEndpoint: (id) => apiRequest(`/admin/endpoints/${id}`),
     createEndpoint: (data) => apiRequest('/admin/endpoints', {
         method: 'POST',
         body: JSON.stringify(data)
@@ -91,9 +92,16 @@ export const adminAPI = {
     toggleEndpoint: (id) => apiRequest(`/admin/endpoints/${id}/toggle`, {
         method: 'PATCH'
     }),
+    testEndpoint: (id, params) => apiRequest(`/admin/endpoints/${id}/test?${new URLSearchParams(params)}`),
 
     // Datasets
     getDatasets: () => apiRequest('/admin/datasets'),
+    getDataset: (id) => apiRequest(`/admin/datasets/${id}`),
+    getDatasetData: (id, params) => apiRequest(`/admin/datasets/${id}/data?${new URLSearchParams(params)}`),
+    createDataset: (data) => apiRequest('/admin/datasets', {
+        method: 'POST',
+        body: JSON.stringify(data)
+    }),
     uploadDataset: (formData) => fetch(`${API_URL}/admin/datasets/upload`, {
         method: 'POST',
         headers: {
@@ -101,14 +109,23 @@ export const adminAPI = {
         },
         body: formData // FormData for file upload
     }).then(res => res.json()),
+    updateDataset: (id, data) => apiRequest(`/admin/datasets/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+    }),
     deleteDataset: (id) => apiRequest(`/admin/datasets/${id}`, {
         method: 'DELETE'
     }),
 
     // Access Keys
     getAccessKeys: () => apiRequest('/admin/access-keys'),
+    getAccessKey: (id) => apiRequest(`/admin/access-keys/${id}`),
     generateAccessKey: (data) => apiRequest('/admin/access-keys/generate', {
         method: 'POST',
+        body: JSON.stringify(data)
+    }),
+    updateAccessKey: (id, data) => apiRequest(`/admin/access-keys/${id}`, {
+        method: 'PUT',
         body: JSON.stringify(data)
     }),
     revokeAccessKey: (id) => apiRequest(`/admin/access-keys/${id}/revoke`, {
@@ -117,6 +134,10 @@ export const adminAPI = {
     regenerateAccessKey: (id) => apiRequest(`/admin/access-keys/${id}/regenerate`, {
         method: 'PATCH'
     }),
+    deleteAccessKey: (id) => apiRequest(`/admin/access-keys/${id}`, {
+        method: 'DELETE'
+    }),
+    getAvailableUsers: () => apiRequest('/admin/access-keys/users'),
 
     // Audit Logs
     getAuditLogs: () => apiRequest('/admin/audit-logs'),
