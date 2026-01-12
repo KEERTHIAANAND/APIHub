@@ -11,7 +11,7 @@ const requestLogSchema = new mongoose.Schema({
     endpointId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Endpoint',
-        required: true
+        default: null
     },
     // User who owns the API key
     userId: {
