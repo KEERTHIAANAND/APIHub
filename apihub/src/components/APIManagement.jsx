@@ -1,30 +1,53 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { adminAPI } from '../services/api';
 
 const APIManagement = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [showModal, setShowModal] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState(null);
+    const [datasets, setDatasets] = useState([]);
+    const [endpoints, setEndpoints] = useState([]);
+
     const [formData, setFormData] = useState({
-        datasetSource: '',
-        identifierName: '',
-        routePath: '',
-        httpVerb: 'GET',
-        initialState: 'active'
+        datasetId: '',
+        name: '',
+        description: '',
+        path: '',
+        method: 'GET',
+        isActive: true
     });
 
-    // TODO: Fetch API endpoints from your backend
-    // Example: useEffect(() => { fetchEndpoints().then(setApiEndpoints); }, []);
-    const [apiEndpoints, setApiEndpoints] = useState([]);
+    const httpMethods = ['GET', 'POST', 'PUT', 'DELETE'];
 
-    // Dataset sources - will be populated from Data Management section
-    const datasetSources = [
-        { value: '', label: '-- Null --' }
-    ];
+    // Fetch endpoints and datasets on mount
+    useEffect(() => {
+        fetchData();
+    }, []);
 
-    const httpMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
-    const stateOptions = [
-        { value: 'active', label: 'Active' },
-        { value: 'inactive', label: 'Inactive' }
-    ];
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            const [endpointsRes, datasetsRes] = await Promise.all([
+                adminAPI.getEndpoints(),
+                adminAPI.getDatasets()
+            ]);
+
+            if (endpointsRes.success) {
+                setEndpoints(endpointsRes.endpoints);
+            }
+            if (datasetsRes.success) {
+                setDatasets(datasetsRes.datasets);
+            }
+        } catch (err) {
+            setError(err.message || 'Failed to fetch data');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const getMethodBadgeColor = (method) => {
         switch (method) {
@@ -36,18 +59,15 @@ const APIManagement = () => {
                 return 'bg-yellow-100 text-yellow-600 border-yellow-200';
             case 'DELETE':
                 return 'bg-red-100 text-red-600 border-red-200';
-            case 'PATCH':
-                return 'bg-purple-100 text-purple-600 border-purple-200';
             default:
                 return 'bg-gray-100 text-gray-600 border-gray-200';
         }
     };
 
     // Filter endpoints based on search query
-    const filteredEndpoints = apiEndpoints.filter(endpoint =>
+    const filteredEndpoints = endpoints.filter(endpoint =>
         endpoint.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        endpoint.route.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        endpoint.context.toLowerCase().includes(searchQuery.toLowerCase())
+        endpoint.path.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const handleInputChange = (e) => {
@@ -55,44 +75,89 @@ const APIManagement = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setSaving(true);
+        setError(null);
 
-        // Create new endpoint object
-        const newEndpoint = {
-            id: Date.now(),
-            name: formData.identifierName,
-            context: `ds_id: ${datasetSources.find(ds => ds.value === formData.datasetSource)?.label || 'None'}`,
-            route: formData.routePath,
-            method: formData.httpVerb,
-            state: formData.initialState,
-            updated: new Date().toISOString().split('T')[0]
-        };
+        try {
+            const response = await adminAPI.createEndpoint({
+                name: formData.name,
+                description: formData.description,
+                method: formData.method,
+                path: formData.path,
+                datasetId: formData.datasetId,
+                isActive: formData.isActive
+            });
 
-        // Add to endpoints list
-        setApiEndpoints(prev => [...prev, newEndpoint]);
+            if (response.success) {
+                await fetchData();
+                handleCloseModal();
+            } else {
+                setError(response.error || 'Failed to create endpoint');
+            }
+        } catch (err) {
+            setError(err.message || 'Failed to create endpoint');
+        } finally {
+            setSaving(false);
+        }
+    };
 
-        // Reset form and close modal
-        setFormData({
-            datasetSource: '',
-            identifierName: '',
-            routePath: '',
-            httpVerb: 'GET',
-            initialState: 'active'
-        });
-        setShowModal(false);
+    const handleToggleEndpoint = async (endpointId) => {
+        try {
+            const response = await adminAPI.toggleEndpoint(endpointId);
+            if (response.success) {
+                await fetchData();
+            } else {
+                alert(response.error || 'Failed to toggle endpoint');
+            }
+        } catch (err) {
+            alert(err.message || 'Failed to toggle endpoint');
+        }
+    };
+
+    const handleDeleteEndpoint = async (endpointId) => {
+        if (!confirm('Are you sure you want to delete this endpoint?')) return;
+
+        try {
+            const response = await adminAPI.deleteEndpoint(endpointId);
+            if (response.success) {
+                await fetchData();
+            } else {
+                alert(response.error || 'Failed to delete endpoint');
+            }
+        } catch (err) {
+            alert(err.message || 'Failed to delete endpoint');
+        }
     };
 
     const handleCloseModal = () => {
         setShowModal(false);
         setFormData({
-            datasetSource: '',
-            identifierName: '',
-            routePath: '',
-            httpVerb: 'GET',
-            initialState: 'active'
+            datasetId: '',
+            name: '',
+            description: '',
+            path: '',
+            method: 'GET',
+            isActive: true
         });
     };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '-';
+        return new Date(dateString).toLocaleDateString();
+    };
+
+    if (loading) {
+        return (
+            <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-gray-500">Loading endpoints...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex-1 overflow-auto p-6">
@@ -112,15 +177,11 @@ const APIManagement = () => {
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    <button className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 text-xs font-medium cursor-pointer transition-all hover:bg-gray-50 hover:border-gray-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                        </svg>
-                        Filters
-                    </button>
+                    {error && <span className="text-sm text-red-500">{error}</span>}
                     <button
                         onClick={() => setShowModal(true)}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-blue-500 border-none rounded-lg text-white text-xs font-medium cursor-pointer transition-all hover:bg-blue-600 shadow-sm hover:shadow-md"
+                        disabled={datasets.length === 0}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-blue-500 border-none rounded-lg text-white text-xs font-medium cursor-pointer transition-all hover:bg-blue-600 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -131,11 +192,17 @@ const APIManagement = () => {
                 </div>
             </div>
 
+            {datasets.length === 0 && (
+                <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 text-sm text-yellow-700">
+                    ⚠️ Create a dataset first before creating endpoints.
+                </div>
+            )}
+
             {/* API Endpoints Table */}
             <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
                 {/* Table Header */}
-                <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_60px] gap-3 px-5 py-3 bg-gray-50 border-b border-gray-200">
-                    <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Name / Context</div>
+                <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_80px] gap-3 px-5 py-3 bg-gray-50 border-b border-gray-200">
+                    <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Name / Dataset</div>
                     <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Route</div>
                     <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Method</div>
                     <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">State</div>
@@ -146,19 +213,21 @@ const APIManagement = () => {
                 {/* Table Body */}
                 {filteredEndpoints.map((endpoint) => (
                     <div
-                        key={endpoint.id}
-                        className="grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_60px] gap-3 px-5 py-3 border-b border-gray-100 hover:bg-gray-50/50 transition-colors"
+                        key={endpoint._id}
+                        className="grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_80px] gap-3 px-5 py-3 border-b border-gray-100 hover:bg-gray-50/50 transition-colors"
                     >
-                        {/* Name / Context */}
+                        {/* Name / Dataset */}
                         <div>
                             <div className="text-xs font-medium text-gray-900">{endpoint.name}</div>
-                            <div className="text-[11px] text-blue-500 mt-0.5">{endpoint.context}</div>
+                            <div className="text-[11px] text-blue-500 mt-0.5">
+                                {endpoint.datasetId?.name || 'No dataset'}
+                            </div>
                         </div>
 
                         {/* Route */}
                         <div className="flex items-center">
                             <code className="text-xs text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded font-mono">
-                                {endpoint.route}
+                                {endpoint.path}
                             </code>
                         </div>
 
@@ -171,28 +240,33 @@ const APIManagement = () => {
 
                         {/* State */}
                         <div className="flex items-center">
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${endpoint.state === 'active'
-                                ? 'bg-green-50 text-green-700 border border-green-200'
-                                : 'bg-gray-50 text-gray-600 border border-gray-200'
-                                }`}>
-                                <span className={`w-1 h-1 rounded-full ${endpoint.state === 'active' ? 'bg-green-500' : 'bg-gray-400'
-                                    }`}></span>
-                                {endpoint.state}
-                            </span>
+                            <button
+                                onClick={() => handleToggleEndpoint(endpoint._id)}
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium cursor-pointer border bg-transparent ${endpoint.isActive
+                                    ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                                    : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                                    }`}
+                            >
+                                <span className={`w-1 h-1 rounded-full ${endpoint.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                                {endpoint.isActive ? 'active' : 'inactive'}
+                            </button>
                         </div>
 
                         {/* Updated */}
                         <div className="flex items-center">
-                            <span className="text-xs text-gray-500">{endpoint.updated}</span>
+                            <span className="text-xs text-gray-500">{formatDate(endpoint.updatedAt)}</span>
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center justify-center">
-                            <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-all cursor-pointer bg-transparent border-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="12" r="1"></circle>
-                                    <circle cx="19" cy="12" r="1"></circle>
-                                    <circle cx="5" cy="12" r="1"></circle>
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={() => handleDeleteEndpoint(endpoint._id)}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all cursor-pointer bg-transparent border-none"
+                                title="Delete endpoint"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                 </svg>
                             </button>
                         </div>
@@ -228,7 +302,7 @@ const APIManagement = () => {
                     <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 z-10">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                            <h2 className="text-lg font-semibold text-gray-900">Register Endpoint</h2>
+                            <h2 className="text-lg font-semibold text-gray-900">Create Endpoint</h2>
                             <button
                                 onClick={handleCloseModal}
                                 className="p-1 text-gray-400 hover:text-gray-600 transition-colors bg-transparent border-none cursor-pointer"
@@ -245,17 +319,21 @@ const APIManagement = () => {
                             {/* Dataset Source */}
                             <div>
                                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
-                                    Dataset Source
+                                    Dataset Source *
                                 </label>
                                 <div className="relative">
                                     <select
-                                        name="datasetSource"
-                                        value={formData.datasetSource}
+                                        name="datasetId"
+                                        value={formData.datasetId}
                                         onChange={handleInputChange}
+                                        required
                                         className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm appearance-none cursor-pointer focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                     >
-                                        {datasetSources.map(ds => (
-                                            <option key={ds.value} value={ds.value}>{ds.label}</option>
+                                        <option value="">Select a dataset</option>
+                                        {datasets.map(ds => (
+                                            <option key={ds._id} value={ds._id}>
+                                                {ds.name} ({ds.recordCount} records)
+                                            </option>
                                         ))}
                                     </select>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
@@ -264,17 +342,17 @@ const APIManagement = () => {
                                 </div>
                             </div>
 
-                            {/* Identifier Name */}
+                            {/* Endpoint Name */}
                             <div>
                                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
-                                    Identifier Name
+                                    Endpoint Name *
                                 </label>
                                 <input
                                     type="text"
-                                    name="identifierName"
-                                    value={formData.identifierName}
+                                    name="name"
+                                    value={formData.name}
                                     onChange={handleInputChange}
-                                    placeholder="e.g. Products V2"
+                                    placeholder="e.g. Get All Products"
                                     required
                                     className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                 />
@@ -283,63 +361,54 @@ const APIManagement = () => {
                             {/* Route Path */}
                             <div>
                                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
-                                    Route Path
+                                    Route Path *
                                 </label>
                                 <input
                                     type="text"
-                                    name="routePath"
-                                    value={formData.routePath}
+                                    name="path"
+                                    value={formData.path}
                                     onChange={handleInputChange}
-                                    placeholder="/api/v..."
+                                    placeholder="/products"
                                     required
+                                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                />
+                                <p className="text-xs text-gray-400 mt-1">Will be prefixed with /api/v1</p>
+                            </div>
+
+                            {/* Description */}
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
+                                    Description
+                                </label>
+                                <input
+                                    type="text"
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    placeholder="Brief description of the endpoint"
                                     className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                                 />
                             </div>
 
-                            {/* HTTP Verb and Initial State Row */}
-                            <div className="grid grid-cols-2 gap-4">
-                                {/* HTTP Verb */}
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
-                                        HTTP Verb
-                                    </label>
-                                    <div className="relative">
-                                        <select
-                                            name="httpVerb"
-                                            value={formData.httpVerb}
-                                            onChange={handleInputChange}
-                                            className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm appearance-none cursor-pointer focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            {/* HTTP Method */}
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
+                                    HTTP Method
+                                </label>
+                                <div className="flex gap-2">
+                                    {httpMethods.map(method => (
+                                        <button
+                                            key={method}
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, method }))}
+                                            className={`px-3 py-2 rounded-lg text-xs font-medium border cursor-pointer transition-all ${formData.method === method
+                                                ? getMethodBadgeColor(method)
+                                                : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                                                }`}
                                         >
-                                            {httpMethods.map(method => (
-                                                <option key={method} value={method}>{method}</option>
-                                            ))}
-                                        </select>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                                            <polyline points="6 9 12 15 18 9"></polyline>
-                                        </svg>
-                                    </div>
-                                </div>
-
-                                {/* Initial State */}
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
-                                        Initial State
-                                    </label>
-                                    <div className="relative">
-                                        <select
-                                            name="initialState"
-                                            value={formData.initialState}
-                                            onChange={handleInputChange}
-                                            className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm appearance-none cursor-pointer focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                                        >
-                                            {stateOptions.map(state => (
-                                                <option key={state.value} value={state.value}>{state.label}</option>
-                                            ))}
-                                        </select>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                                            <polyline points="6 9 12 15 18 9"></polyline>
-                                        </svg>
-                                    </div>
+                                            {method}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 
@@ -354,9 +423,10 @@ const APIManagement = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-6 py-2.5 bg-blue-500 border-none rounded-lg text-white text-sm font-medium cursor-pointer transition-all hover:bg-blue-600 shadow-sm hover:shadow-md"
+                                    disabled={saving || !formData.datasetId || !formData.name || !formData.path}
+                                    className="px-6 py-2.5 bg-blue-500 border-none rounded-lg text-white text-sm font-medium cursor-pointer transition-all hover:bg-blue-600 shadow-sm hover:shadow-md disabled:opacity-50"
                                 >
-                                    Create
+                                    {saving ? 'Creating...' : 'Create Endpoint'}
                                 </button>
                             </div>
                         </form>
