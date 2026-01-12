@@ -52,6 +52,9 @@ app.use('/api/admin/datasets', require('./routes/datasets'));
 app.use('/api/admin/access-keys', require('./routes/apiKeys'));
 // app.use('/api/admin/audit', require('./routes/audit'));
 
+// API Gateway - Dynamic endpoints (must be after admin routes)
+app.use('/api/v1', require('./routes/gateway'));
+
 // 404 handler
 app.use((req, res, next) => {
     res.status(404).json({
