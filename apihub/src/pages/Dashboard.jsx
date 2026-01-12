@@ -15,29 +15,8 @@ const Dashboard = () => {
         navigate('/');
     };
 
-    // Mock data for API keys
-    const apiKeys = [
-        {
-            id: 1,
-            name: 'Production Key',
-            status: 'active',
-            key: 'pk_prod_a8f2k9x3m7n5p1q4',
-            maskedKey: 'pk_prod_... ••••••••••••••••',
-            createdAt: '2023-01-10',
-            lastUsed: '2 mins ago',
-            totalUsage: 154200,
-        },
-        {
-            id: 2,
-            name: 'Customer Access',
-            status: 'active',
-            key: 'pk_cust_b3g7h2j8k1l4m9n6',
-            maskedKey: 'pk_cust_... ••••••••••••••••',
-            createdAt: '2023-03-15',
-            lastUsed: '1 hour ago',
-            totalUsage: 4500,
-        },
-    ];
+    // API keys - will be fetched from backend
+    const apiKeys = [];
 
     const toggleKeyVisibility = (keyId) => {
         setVisibleKeys(prev => ({
@@ -52,21 +31,8 @@ const Dashboard = () => {
         setTimeout(() => setCopiedKey(null), 2000);
     };
 
-    // Mock data for trace history
-    const traceHistory = [
-        { timestamp: '1/8/2026, 9:35:47 PM', verb: 'PUT', route: '/api/v1/products', status: 401, latency: '171ms' },
-        { timestamp: '1/8/2026, 9:32:59 PM', verb: 'POST', route: '/api/v1/customers', status: 201, latency: '456ms' },
-        { timestamp: '1/8/2026, 9:29:55 PM', verb: 'PUT', route: '/api/v1/customers', status: 403, latency: '438ms' },
-        { timestamp: '1/8/2026, 9:20:46 PM', verb: 'PUT', route: '/api/v1/products', status: 403, latency: '186ms' },
-        { timestamp: '1/8/2026, 9:15:08 PM', verb: 'DELETE', route: '/api/v1/customers', status: 401, latency: '454ms' },
-        { timestamp: '1/8/2026, 9:14:32 PM', verb: 'PUT', route: '/api/v1/products', status: 201, latency: '360ms' },
-        { timestamp: '1/8/2026, 9:10:15 PM', verb: 'GET', route: '/api/v1/users', status: 200, latency: '120ms' },
-        { timestamp: '1/8/2026, 9:05:22 PM', verb: 'POST', route: '/api/v1/orders', status: 201, latency: '380ms' },
-        { timestamp: '1/8/2026, 9:00:11 PM', verb: 'DELETE', route: '/api/v1/products', status: 403, latency: '290ms' },
-        { timestamp: '1/8/2026, 8:55:33 PM', verb: 'GET', route: '/api/v1/analytics', status: 200, latency: '95ms' },
-        { timestamp: '1/8/2026, 8:50:18 PM', verb: 'POST', route: '/api/v1/auth', status: 200, latency: '145ms' },
-        { timestamp: '1/8/2026, 8:45:02 PM', verb: 'PUT', route: '/api/v1/settings', status: 200, latency: '210ms' },
-    ];
+    // Trace history - will be fetched from backend
+    const traceHistory = [];
 
     // Display only 5 recent for main view
     const recentHistory = traceHistory.slice(0, 5);
@@ -155,90 +121,106 @@ const Dashboard = () => {
         <div className="flex-1 p-6 overflow-hidden bg-gray-50/50">
 
             {/* API Keys List */}
-            <div className="space-y-3 mb-4">
-                {apiKeys.map((keyItem) => (
-                    <div key={keyItem.id} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
-                        <div className="flex items-start justify-between">
-                            {/* Left Section - Key Info */}
-                            <div className="flex-1">
-                                {/* Key Name and Status */}
-                                <div className="flex items-center gap-2 mb-3">
-                                    <h3 className="text-sm font-semibold text-gray-900">{keyItem.name}</h3>
-                                    <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full ${keyItem.status === 'active'
-                                        ? 'bg-blue-100 text-blue-600'
-                                        : 'bg-gray-100 text-gray-600'
-                                        }`}>
-                                        {keyItem.status.charAt(0).toUpperCase() + keyItem.status.slice(1)}
-                                    </span>
-                                </div>
-
-                                {/* Key Input with Actions */}
-                                <div className="flex items-center gap-2 mb-2">
-                                    <div className="flex-1 max-w-sm">
-                                        <div className="flex items-center bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5">
-                                            <span className="text-xs text-gray-600 font-mono flex-1">
-                                                {visibleKeys[keyItem.id] ? keyItem.key : keyItem.maskedKey}
-                                            </span>
-                                            <button
-                                                onClick={() => toggleKeyVisibility(keyItem.id)}
-                                                className="p-1 text-gray-400 hover:text-gray-600 transition-colors bg-transparent border-none cursor-pointer"
-                                                title={visibleKeys[keyItem.id] ? 'Hide key' : 'Show key'}
-                                            >
-                                                {visibleKeys[keyItem.id] ? (
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                                                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                                                    </svg>
-                                                ) : (
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                                        <circle cx="12" cy="12" r="3"></circle>
-                                                    </svg>
-                                                )}
-                                            </button>
-                                        </div>
+            {apiKeys.length > 0 ? (
+                <div className="space-y-3 mb-4">
+                    {apiKeys.map((keyItem) => (
+                        <div key={keyItem.id} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                            <div className="flex items-start justify-between">
+                                {/* Left Section - Key Info */}
+                                <div className="flex-1">
+                                    {/* Key Name and Status */}
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <h3 className="text-sm font-semibold text-gray-900">{keyItem.name}</h3>
+                                        <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full ${keyItem.status === 'active'
+                                            ? 'bg-blue-100 text-blue-600'
+                                            : 'bg-gray-100 text-gray-600'
+                                            }`}>
+                                            {keyItem.status.charAt(0).toUpperCase() + keyItem.status.slice(1)}
+                                        </span>
                                     </div>
-                                    <button
-                                        onClick={() => copyToClipboard(keyItem.key, keyItem.id)}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 hover:text-gray-900 bg-white border border-gray-200 rounded-md transition-all duration-200 hover:bg-gray-50 cursor-pointer"
-                                    >
-                                        {copiedKey === keyItem.id ? (
-                                            <>
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
-                                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                                </svg>
-                                                Copied!
-                                            </>
-                                        ) : (
-                                            <>
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                                </svg>
-                                                Copy
-                                            </>
-                                        )}
-                                    </button>
+
+                                    {/* Key Input with Actions */}
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="flex-1 max-w-sm">
+                                            <div className="flex items-center bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5">
+                                                <span className="text-xs text-gray-600 font-mono flex-1">
+                                                    {visibleKeys[keyItem.id] ? keyItem.key : keyItem.maskedKey}
+                                                </span>
+                                                <button
+                                                    onClick={() => toggleKeyVisibility(keyItem.id)}
+                                                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors bg-transparent border-none cursor-pointer"
+                                                    title={visibleKeys[keyItem.id] ? 'Hide key' : 'Show key'}
+                                                >
+                                                    {visibleKeys[keyItem.id] ? (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                                                        </svg>
+                                                    ) : (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                            <circle cx="12" cy="12" r="3"></circle>
+                                                        </svg>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => copyToClipboard(keyItem.key, keyItem.id)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 hover:text-gray-900 bg-white border border-gray-200 rounded-md transition-all duration-200 hover:bg-gray-50 cursor-pointer"
+                                        >
+                                            {copiedKey === keyItem.id ? (
+                                                <>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
+                                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                                    </svg>
+                                                    Copied!
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                                    </svg>
+                                                    Copy
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    {/* Created and Last Used */}
+                                    <p className="text-[10px] text-gray-400">
+                                        Created on {keyItem.createdAt} · Last used {keyItem.lastUsed}
+                                    </p>
                                 </div>
 
-                                {/* Created and Last Used */}
-                                <p className="text-[10px] text-gray-400">
-                                    Created on {keyItem.createdAt} · Last used {keyItem.lastUsed}
-                                </p>
-                            </div>
-
-                            {/* Right Section - Usage Stats */}
-                            <div className="text-right pl-6">
-                                <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Total Usage</p>
-                                <p className="text-2xl font-bold text-gray-900">
-                                    {keyItem.totalUsage.toLocaleString()}
-                                </p>
-                                <p className="text-[10px] text-gray-400">Requests since creation</p>
+                                {/* Right Section - Usage Stats */}
+                                <div className="text-right pl-6">
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Total Usage</p>
+                                    <p className="text-2xl font-bold text-gray-900">
+                                        {keyItem.totalUsage.toLocaleString()}
+                                    </p>
+                                    <p className="text-[10px] text-gray-400">Requests since creation</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            ) : (
+                /* Empty State */
+                <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-xl border border-gray-200 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 mb-4">
+                        <path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+                    </svg>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No API Keys Yet</h3>
+                    <p className="text-sm text-gray-500 mb-4 max-w-md">
+                        You haven't created any API keys. API keys allow you to authenticate requests to the API.
+                    </p>
+                    <p className="text-xs text-gray-400">
+                        API key generation will be available soon
+                    </p>
+                </div>
+            )}
 
             {/* Security Note */}
             <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
@@ -266,9 +248,9 @@ const Dashboard = () => {
                             <polyline points="6 17 11 12 6 7"></polyline>
                         </svg>
                     </div>
-                    <p className="text-3xl font-bold text-gray-900 mb-3">45,200</p>
+                    <p className="text-3xl font-bold text-gray-900 mb-3">0</p>
                     <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500 rounded-full" style={{ width: '75%' }}></div>
+                        <div className="h-full bg-blue-500 rounded-full" style={{ width: '0%' }}></div>
                     </div>
                 </div>
 
@@ -281,8 +263,8 @@ const Dashboard = () => {
                             <polyline points="17 6 23 6 23 12"></polyline>
                         </svg>
                     </div>
-                    <p className="text-3xl font-bold text-gray-900 mb-1">99.4%</p>
-                    <p className="text-xs text-green-500 font-medium">All systems operational</p>
+                    <p className="text-3xl font-bold text-gray-900 mb-1">--</p>
+                    <p className="text-xs text-gray-400 font-medium">No requests yet</p>
                 </div>
 
                 {/* Active Keys Card */}
@@ -293,7 +275,7 @@ const Dashboard = () => {
                             <path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
                         </svg>
                     </div>
-                    <p className="text-3xl font-bold text-gray-900 mb-1">2</p>
+                    <p className="text-3xl font-bold text-gray-900 mb-1">{apiKeys.length}</p>
                     <button
                         onClick={() => setActiveTab('keys')}
                         className="text-xs text-blue-500 font-medium bg-transparent border-none cursor-pointer p-0 hover:text-blue-600"
@@ -312,10 +294,10 @@ const Dashboard = () => {
                         </svg>
                     </div>
                     <p className="text-3xl font-bold text-gray-900 mb-3">
-                        450<span className="text-lg font-normal text-gray-400"> / 1000</span>
+                        0<span className="text-lg font-normal text-gray-400"> / 1000</span>
                     </p>
                     <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500 rounded-full" style={{ width: '45%' }}></div>
+                        <div className="h-full bg-blue-500 rounded-full" style={{ width: '0%' }}></div>
                     </div>
                 </div>
             </div>
@@ -324,15 +306,31 @@ const Dashboard = () => {
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-900">Trace History</h3>
-                    <button
-                        onClick={() => setShowLogsModal(true)}
-                        className="text-sm text-blue-500 font-medium bg-transparent border-none cursor-pointer hover:text-blue-600"
-                    >
-                        View All Logs
-                    </button>
+                    {traceHistory.length > 0 && (
+                        <button
+                            onClick={() => setShowLogsModal(true)}
+                            className="text-sm text-blue-500 font-medium bg-transparent border-none cursor-pointer hover:text-blue-600"
+                        >
+                            View All Logs
+                        </button>
+                    )}
                 </div>
                 <div className="overflow-hidden">
-                    <TraceTable data={recentHistory} compact={true} />
+                    {recentHistory.length > 0 ? (
+                        <TraceTable data={recentHistory} compact={true} />
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 mb-4">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            <p className="text-gray-500 font-medium mb-1">No API requests yet</p>
+                            <p className="text-sm text-gray-400">When you make API calls, they'll appear here</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
