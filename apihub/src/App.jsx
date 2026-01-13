@@ -3,8 +3,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import { DashboardLayout, Overview, MyKeys, ApiDocs } from './components/developer';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -22,7 +22,7 @@ const AdminRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
   if (!isAdmin()) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/overview" replace />;
   }
   return children;
 };
@@ -31,7 +31,7 @@ const AdminRoute = ({ children }) => {
 const PublicRoute = ({ children }) => {
   const { user, isAdmin } = useAuth();
   if (user) {
-    return <Navigate to={isAdmin() ? "/admin" : "/dashboard"} replace />;
+    return <Navigate to={isAdmin() ? "/admin" : "/overview"} replace />;
   }
   return children;
 };
@@ -56,14 +56,24 @@ function AppRoutes() {
           </PublicRoute>
         }
       />
+
+      {/* Developer Dashboard Routes */}
       <Route
-        path="/dashboard"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <DashboardLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route path="/overview" element={<Overview />} />
+        <Route path="/my-keys" element={<MyKeys />} />
+        <Route path="/api-docs" element={<ApiDocs />} />
+      </Route>
+
+      {/* Redirect /dashboard to /overview */}
+      <Route path="/dashboard" element={<Navigate to="/overview" replace />} />
+
+      {/* Admin Route */}
       <Route
         path="/admin"
         element={
