@@ -56,18 +56,19 @@ export const authAPI = {
     makeAdmin: () => apiRequest('/auth/make-admin', { method: 'POST' })
 };
 
-// User Dashboard API
-export const userAPI = {
-    getStats: () => apiRequest('/user/stats'),
-    getApiKeys: () => apiRequest('/user/api-keys'),
-    createApiKey: (data) => apiRequest('/user/api-keys', {
-        method: 'POST',
-        body: JSON.stringify(data)
-    }),
-    revokeApiKey: (keyId) => apiRequest(`/user/api-keys/${keyId}`, {
-        method: 'DELETE'
-    }),
-    getTraceHistory: () => apiRequest('/user/trace-history')
+// Developer Dashboard API (for non-admin users)
+export const developerAPI = {
+    // Get my assigned API keys
+    getMyApiKeys: () => apiRequest('/developer/api-keys'),
+
+    // Get my usage stats
+    getMyStats: () => apiRequest('/developer/stats'),
+
+    // Get my request history
+    getMyHistory: (params = {}) => apiRequest(`/developer/history?${new URLSearchParams(params)}`),
+
+    // Get available endpoints for my keys
+    getMyEndpoints: () => apiRequest('/developer/endpoints')
 };
 
 // Admin API
