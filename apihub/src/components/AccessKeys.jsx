@@ -12,13 +12,15 @@ const AccessKeys = () => {
     const [error, setError] = useState(null);
     const [endpoints, setEndpoints] = useState([]);
     const [apiKeys, setApiKeys] = useState([]);
+    const [users, setUsers] = useState([]);
 
     const [formData, setFormData] = useState({
         name: '',
         description: '',
         accessLevel: 'all',
         endpoints: [],
-        rateLimit: 1000
+        rateLimit: 1000,
+        assignedTo: ''
     });
 
     // Fetch API keys and endpoints on mount
@@ -31,9 +33,10 @@ const AccessKeys = () => {
             setLoading(true);
             setError(null);
 
-            const [keysRes, endpointsRes] = await Promise.all([
+            const [keysRes, endpointsRes, usersRes] = await Promise.all([
                 adminAPI.getAccessKeys(),
-                adminAPI.getEndpoints()
+                adminAPI.getEndpoints(),
+                adminAPI.getAvailableUsers()
             ]);
 
             if (keysRes.success) {
@@ -41,6 +44,9 @@ const AccessKeys = () => {
             }
             if (endpointsRes.success) {
                 setEndpoints(endpointsRes.endpoints);
+            }
+            if (usersRes.success) {
+                setUsers(usersRes.users);
             }
         } catch (err) {
             setError(err.message || 'Failed to fetch data');
@@ -135,7 +141,8 @@ const AccessKeys = () => {
                 description: formData.description,
                 accessLevel: formData.accessLevel,
                 endpoints: formData.accessLevel === 'specific' ? formData.endpoints : [],
-                rateLimit: parseInt(formData.rateLimit)
+                rateLimit: parseInt(formData.rateLimit),
+                assignedTo: formData.assignedTo || null
             });
 
             if (response.success) {
@@ -161,7 +168,8 @@ const AccessKeys = () => {
             description: '',
             accessLevel: 'all',
             endpoints: [],
-            rateLimit: 1000
+            rateLimit: 1000,
+            assignedTo: ''
         });
     };
 
@@ -230,8 +238,8 @@ const AccessKeys = () => {
                             <div>
                                 <h3 className="text-sm font-semibold text-gray-900">{apiKey.name}</h3>
                                 <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${apiKey.status === 'active'
-                                        ? 'bg-green-50 text-green-700 border border-green-200'
-                                        : 'bg-red-50 text-red-700 border border-red-200'
+                                    ? 'bg-green-50 text-green-700 border border-green-200'
+                                    : 'bg-red-50 text-red-700 border border-red-200'
                                     }`}>
                                     <span className={`w-1 h-1 rounded-full ${apiKey.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`}></span>
                                     {apiKey.status}
@@ -302,8 +310,8 @@ const AccessKeys = () => {
                                 <button
                                     onClick={() => handleRevokeKey(apiKey._id)}
                                     className={`px-2 py-1 text-xs rounded transition-all border-none cursor-pointer ${apiKey.status === 'active'
-                                            ? 'text-orange-600 hover:bg-orange-50'
-                                            : 'text-green-600 hover:bg-green-50'
+                                        ? 'text-orange-600 hover:bg-orange-50'
+                                        : 'text-green-600 hover:bg-green-50'
                                         } bg-transparent`}
                                 >
                                     {apiKey.status === 'active' ? 'Revoke' : 'Activate'}
