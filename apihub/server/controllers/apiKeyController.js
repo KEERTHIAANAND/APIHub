@@ -90,6 +90,7 @@ const generateApiKey = async (req, res, next) => {
             name,
             description,
             keyHash,
+            fullKey: key, // Store full key for team sharing
             keyPrefix,
             endpoints: accessLevel === 'specific' ? endpoints : [],
             accessLevel: accessLevel || 'specific',
@@ -209,6 +210,7 @@ const regenerateApiKey = async (req, res, next) => {
         const { key, keyHash, keyPrefix } = ApiKey.generateKey();
 
         apiKey.keyHash = keyHash;
+        apiKey.fullKey = key; // Store full key
         apiKey.keyPrefix = keyPrefix;
         apiKey.status = 'active'; // Re-activate if revoked
         apiKey.totalUsage = 0; // Reset usage
