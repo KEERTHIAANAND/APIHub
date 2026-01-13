@@ -13,12 +13,17 @@ const apiKeySchema = new mongoose.Schema({
         trim: true,
         maxlength: [500, 'Description cannot exceed 500 characters']
     },
-    // The actual API key (hashed for security)
+    // The actual API key (hashed for authentication)
     keyHash: {
         type: String,
         required: true
     },
-    // Prefix for display (e.g., "ak_xxxx")
+    // Full key stored (for team sharing - displayed to developers)
+    fullKey: {
+        type: String,
+        required: true
+    },
+    // Prefix for display (e.g., "ak_xxxx...")
     keyPrefix: {
         type: String,
         required: true
