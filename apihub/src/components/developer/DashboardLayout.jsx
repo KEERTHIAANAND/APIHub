@@ -30,6 +30,7 @@ const DashboardLayout = () => {
         const path = location.pathname;
         if (path === '/my-keys') return 'my-keys';
         if (path === '/api-docs') return 'api-docs';
+        if (path === '/playground') return 'playground';
         return 'overview';
     };
 
@@ -66,6 +67,21 @@ const DashboardLayout = () => {
         navigate('/');
     };
 
+    const handleClearHistory = async () => {
+        try {
+            const res = await developerAPI.clearHistory();
+            if (res.success) {
+                // Clear local state
+                setHistory([]);
+                // Refresh stats since they depend on request logs
+                const statsRes = await developerAPI.getMyStats();
+                if (statsRes.success) setStats(statsRes.stats);
+            }
+        } catch (err) {
+            console.error('Failed to clear history:', err);
+        }
+    };
+
     const copyToClipboard = (text, keyId) => {
         navigator.clipboard.writeText(text);
         setCopiedKey(keyId);
@@ -76,6 +92,7 @@ const DashboardLayout = () => {
         { id: 'overview', label: 'Overview', icon: 'grid', path: '/overview' },
         { id: 'my-keys', label: 'My Keys', icon: 'key', path: '/my-keys' },
         { id: 'api-docs', label: 'API Docs', icon: 'book', path: '/api-docs' },
+        { id: 'playground', label: 'Playground', icon: 'play', path: '/playground' },
     ];
 
     const getIcon = (type) => {
@@ -102,6 +119,12 @@ const DashboardLayout = () => {
                         <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                     </svg>
                 );
+            case 'play':
+                return (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                    </svg>
+                );
             default:
                 return null;
         }
@@ -115,6 +138,8 @@ const DashboardLayout = () => {
                 return { title: 'My API Keys', subtitle: 'View and manage your assigned API keys.' };
             case 'api-docs':
                 return { title: 'API Documentation', subtitle: 'Learn how to use the API.' };
+            case 'playground':
+                return { title: 'API Playground', subtitle: 'Test your API endpoints in real-time.' };
             default:
                 return { title: 'Dashboard', subtitle: 'Welcome to your developer portal.' };
         }
@@ -160,12 +185,7 @@ const DashboardLayout = () => {
                 {/* Logo */}
                 <div className="p-5 border-b border-gray-700/50">
                     <Link to="/" className="flex items-center gap-2 text-white no-underline">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-7 h-7">
-                            <rect x="3" y="3" width="7" height="7" rx="1.5" fill="#3b82f6" />
-                            <rect x="14" y="3" width="7" height="7" rx="1.5" fill="#3b82f6" opacity="0.7" />
-                            <rect x="3" y="14" width="7" height="7" rx="1.5" fill="#3b82f6" opacity="0.7" />
-                            <rect x="14" y="14" width="7" height="7" rx="1.5" fill="#3b82f6" opacity="0.4" />
-                        </svg>
+                        <img src="/apihub-logo.png" alt="APIHub Logo" className="w-7 h-7 object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
                         <span className="font-semibold text-lg">APIHub</span>
                     </Link>
                 </div>
@@ -259,7 +279,8 @@ const DashboardLayout = () => {
                     formatDate,
                     getMethodColor,
                     getStatusColor,
-                    navigate
+                    navigate,
+                    clearHistory: handleClearHistory
                 }} />
             </main>
 
