@@ -68,11 +68,17 @@ export const developerAPI = {
     getMyHistory: (params = {}) => apiRequest(`/developer/history?${new URLSearchParams(params)}`),
 
     // Get available endpoints for my keys
-    getMyEndpoints: () => apiRequest('/developer/endpoints')
+    getMyEndpoints: () => apiRequest('/developer/endpoints'),
+
+    // Clear request history
+    clearHistory: () => apiRequest('/developer/history', { method: 'DELETE' })
 };
 
 // Admin API
 export const adminAPI = {
+    // Dashboard Stats
+    getDashboardStats: () => apiRequest('/admin/dashboard-stats'),
+
     // Overview
     getOverview: () => apiRequest('/admin/overview'),
 
