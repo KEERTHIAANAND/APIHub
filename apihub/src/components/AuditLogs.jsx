@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { adminAPI } from '../services/api';
 
 const AuditLogs = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -8,8 +9,33 @@ const AuditLogs = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 15;
 
-    // Audit logs data - starts empty, will be populated from backend
+    // Audit logs data - fetched from backend
     const [auditLogs, setAuditLogs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Fetch audit logs on mount
+    useEffect(() => {
+        fetchAuditLogs();
+    }, []);
+
+    const fetchAuditLogs = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await adminAPI.getAuditLogs();
+            if (response.success) {
+                setAuditLogs(response.logs);
+            } else {
+                setError('Failed to fetch audit logs');
+            }
+        } catch (err) {
+            console.error('Error fetching audit logs:', err);
+            setError(err.message || 'Failed to fetch audit logs');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Dataset options for filter
     const datasetOptions = [
@@ -116,6 +142,36 @@ const AuditLogs = () => {
         a.click();
         window.URL.revokeObjectURL(url);
     };
+
+    // Loading state
+    if (loading) {
+        return (
+            <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-gray-500">Loading audit logs...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="text-red-500 text-4xl mb-4">⚠️</div>
+                    <p className="text-gray-700 font-medium">{error}</p>
+                    <button
+                        onClick={fetchAuditLogs}
+                        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex-1 overflow-auto p-4">

@@ -4,7 +4,7 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import AdminDashboard from './pages/AdminDashboard';
-import { DashboardLayout, Overview, MyKeys, ApiDocs } from './components/developer';
+import { DashboardLayout, Overview, MyKeys, ApiDocs, ApiPlayground } from './components/developer';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -68,6 +68,7 @@ function AppRoutes() {
         <Route path="/overview" element={<Overview />} />
         <Route path="/my-keys" element={<MyKeys />} />
         <Route path="/api-docs" element={<ApiDocs />} />
+        <Route path="/playground" element={<ApiPlayground />} />
       </Route>
 
       {/* Redirect /dashboard to /overview */}
