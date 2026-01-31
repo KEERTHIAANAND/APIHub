@@ -1,7 +1,15 @@
+import { useState, useEffect } from 'react';
+import { adminAPI } from '../services/api';
+
 const Overview = () => {
-    // TODO: Fetch traffic data from your backend API
-    // Example: useEffect(() => { fetchTrafficData().then(setTrafficData); }, []);
-    const trafficData = [
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        totalRequests: 0,
+        globalLatency: 0,
+        activeEndpoints: 0,
+        errorRate: 0
+    });
+    const [trafficData, setTrafficData] = useState([
         { time: '00:00', value: 0 },
         { time: '04:00', value: 0 },
         { time: '08:00', value: 0 },
@@ -9,11 +17,46 @@ const Overview = () => {
         { time: '16:00', value: 0 },
         { time: '20:00', value: 0 },
         { time: '23:59', value: 0 },
-    ];
+    ]);
+    const [statusCodes, setStatusCodes] = useState({
+        success: 0,
+        clientError: 0,
+        serverError: 0
+    });
+
+    useEffect(() => {
+        fetchDashboardStats();
+    }, []);
+
+    const fetchDashboardStats = async () => {
+        try {
+            setLoading(true);
+            const response = await adminAPI.getDashboardStats();
+
+            if (response.success) {
+                setStats(response.stats || {
+                    totalRequests: 0,
+                    globalLatency: 0,
+                    activeEndpoints: 0,
+                    errorRate: 0
+                });
+                if (response.trafficData) {
+                    setTrafficData(response.trafficData);
+                }
+                if (response.statusCodes) {
+                    setStatusCodes(response.statusCodes);
+                }
+            }
+        } catch (err) {
+            console.error('Failed to fetch dashboard stats:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Generate SVG path for traffic chart
     const generatePath = () => {
-        const maxValue = 3600;
+        const maxValue = Math.max(...trafficData.map(d => d.value), 100);
         const width = 600;
         const height = 220;
         const padding = 40;
@@ -29,7 +72,7 @@ const Overview = () => {
 
     // Generate area path (for gradient fill under the line)
     const generateAreaPath = () => {
-        const maxValue = 3600;
+        const maxValue = Math.max(...trafficData.map(d => d.value), 100);
         const width = 600;
         const height = 220;
         const padding = 40;
@@ -42,6 +85,23 @@ const Overview = () => {
 
         return `M ${padding},${height - padding} L ${points.join(' L ')} L ${width - padding},${height - padding} Z`;
     };
+
+    // Calculate percentages for donut chart
+    const total = statusCodes.success + statusCodes.clientError + statusCodes.serverError;
+    const successPercent = total > 0 ? Math.round((statusCodes.success / total) * 100) : 0;
+    const clientErrorPercent = total > 0 ? Math.round((statusCodes.clientError / total) * 100) : 0;
+    const serverErrorPercent = total > 0 ? Math.round((statusCodes.serverError / total) * 100) : 0;
+
+    if (loading) {
+        return (
+            <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-gray-500">Loading dashboard...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex-1 overflow-auto p-6 bg-gray-50">
@@ -56,8 +116,12 @@ const Overview = () => {
                             <polyline points="17 6 23 6 23 12"></polyline>
                         </svg>
                     </div>
-                    <div className="text-2xl font-bold text-gray-900 mb-1">--</div>
-                    <div className="text-xs text-gray-400 font-medium">No data available</div>
+                    <div className="text-2xl font-bold text-gray-900 mb-1">
+                        {stats.totalRequests > 0 ? stats.totalRequests.toLocaleString() : '--'}
+                    </div>
+                    <div className="text-xs text-gray-400 font-medium">
+                        {stats.totalRequests > 0 ? 'All time' : 'No data yet'}
+                    </div>
                 </div>
 
                 {/* Global Latency */}
@@ -68,8 +132,13 @@ const Overview = () => {
                             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                         </svg>
                     </div>
-                    <div className="text-2xl font-bold text-gray-900 mb-1">--<span className="text-base text-gray-400 ml-1 font-normal">ms</span></div>
-                    <div className="text-xs text-gray-400 font-medium">No data available</div>
+                    <div className="text-2xl font-bold text-gray-900 mb-1">
+                        {stats.globalLatency > 0 ? stats.globalLatency : '--'}
+                        <span className="text-base text-gray-400 ml-1 font-normal">ms</span>
+                    </div>
+                    <div className="text-xs text-gray-400 font-medium">
+                        {stats.globalLatency > 0 ? 'Average' : 'No data yet'}
+                    </div>
                 </div>
 
                 {/* Active Endpoints */}
@@ -82,10 +151,10 @@ const Overview = () => {
                             <line x1="12" y1="17" x2="12" y2="21"></line>
                         </svg>
                     </div>
-                    <div className="text-2xl font-bold text-gray-900 mb-1">0</div>
+                    <div className="text-2xl font-bold text-gray-900 mb-1">{stats.activeEndpoints}</div>
                     <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium">
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                        No endpoints
+                        <span className={`w-1.5 h-1.5 rounded-full ${stats.activeEndpoints > 0 ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                        {stats.activeEndpoints > 0 ? 'Running' : 'No endpoints'}
                     </div>
                 </div>
 
@@ -99,8 +168,12 @@ const Overview = () => {
                             <line x1="12" y1="16" x2="12.01" y2="16"></line>
                         </svg>
                     </div>
-                    <div className="text-2xl font-bold text-gray-900 mb-1">--%</div>
-                    <div className="text-xs text-gray-400 font-medium">No data available</div>
+                    <div className="text-2xl font-bold text-gray-900 mb-1">
+                        {total > 0 ? `${stats.errorRate}%` : '--%'}
+                    </div>
+                    <div className="text-xs text-gray-400 font-medium">
+                        {total > 0 ? 'Last 24 hours' : 'No data yet'}
+                    </div>
                 </div>
             </div>
 
@@ -112,10 +185,10 @@ const Overview = () => {
                     <div className="relative h-56">
                         {/* Y-axis labels */}
                         <div className="absolute left-0 top-0 bottom-8 flex flex-col justify-between text-[10px] text-gray-400 w-10">
-                            <span>3600</span>
-                            <span>2700</span>
-                            <span>1800</span>
-                            <span>900</span>
+                            <span>{Math.max(...trafficData.map(d => d.value), 100)}</span>
+                            <span>{Math.round(Math.max(...trafficData.map(d => d.value), 100) * 0.75)}</span>
+                            <span>{Math.round(Math.max(...trafficData.map(d => d.value), 100) * 0.5)}</span>
+                            <span>{Math.round(Math.max(...trafficData.map(d => d.value), 100) * 0.25)}</span>
                             <span>0</span>
                         </div>
 
@@ -157,13 +230,9 @@ const Overview = () => {
 
                             {/* X-axis labels */}
                             <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] text-gray-400 -mb-5">
-                                <span>00:00</span>
-                                <span>04:00</span>
-                                <span>08:00</span>
-                                <span>12:00</span>
-                                <span>16:00</span>
-                                <span>20:00</span>
-                                <span>23:59</span>
+                                {trafficData.map((d, i) => (
+                                    <span key={i}>{d.time}</span>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -186,47 +255,55 @@ const Overview = () => {
                                     stroke="#f3f4f6"
                                     strokeWidth="10"
                                 />
-                                {/* 2xx Series - Green (85%) */}
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="40"
-                                    fill="none"
-                                    stroke="#22c55e"
-                                    strokeWidth="10"
-                                    strokeDasharray="213.6 251.2"
-                                    strokeDashoffset="0"
-                                    strokeLinecap="round"
-                                />
-                                {/* 4xx Series - Orange (10%) */}
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="40"
-                                    fill="none"
-                                    stroke="#f97316"
-                                    strokeWidth="10"
-                                    strokeDasharray="25.1 251.2"
-                                    strokeDashoffset="-213.6"
-                                    strokeLinecap="round"
-                                />
-                                {/* 5xx Series - Red (5%) */}
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="40"
-                                    fill="none"
-                                    stroke="#ef4444"
-                                    strokeWidth="10"
-                                    strokeDasharray="12.6 251.2"
-                                    strokeDashoffset="-238.7"
-                                    strokeLinecap="round"
-                                />
+                                {total > 0 ? (
+                                    <>
+                                        {/* 2xx Series - Green */}
+                                        <circle
+                                            cx="50"
+                                            cy="50"
+                                            r="40"
+                                            fill="none"
+                                            stroke="#22c55e"
+                                            strokeWidth="10"
+                                            strokeDasharray={`${successPercent * 2.512} 251.2`}
+                                            strokeDashoffset="0"
+                                            strokeLinecap="round"
+                                        />
+                                        {/* 4xx Series - Orange */}
+                                        <circle
+                                            cx="50"
+                                            cy="50"
+                                            r="40"
+                                            fill="none"
+                                            stroke="#f97316"
+                                            strokeWidth="10"
+                                            strokeDasharray={`${clientErrorPercent * 2.512} 251.2`}
+                                            strokeDashoffset={`-${successPercent * 2.512}`}
+                                            strokeLinecap="round"
+                                        />
+                                        {/* 5xx Series - Red */}
+                                        <circle
+                                            cx="50"
+                                            cy="50"
+                                            r="40"
+                                            fill="none"
+                                            stroke="#ef4444"
+                                            strokeWidth="10"
+                                            strokeDasharray={`${serverErrorPercent * 2.512} 251.2`}
+                                            strokeDashoffset={`-${(successPercent + clientErrorPercent) * 2.512}`}
+                                            strokeLinecap="round"
+                                        />
+                                    </>
+                                ) : null}
                             </svg>
                             {/* Center text */}
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-2xl font-bold text-green-500">100%</span>
-                                <span className="text-[10px] text-gray-400 uppercase tracking-wider">Load</span>
+                                <span className="text-2xl font-bold text-green-500">
+                                    {total > 0 ? `${successPercent}%` : '--'}
+                                </span>
+                                <span className="text-[10px] text-gray-400 uppercase tracking-wider">
+                                    {total > 0 ? 'Success' : 'No Data'}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -238,21 +315,27 @@ const Overview = () => {
                                 <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
                                 <span className="text-gray-600 text-xs">2xx Series</span>
                             </div>
-                            <span className="text-gray-900 font-semibold text-xs">--%</span>
+                            <span className="text-gray-900 font-semibold text-xs">
+                                {total > 0 ? `${successPercent}%` : '--%'}
+                            </span>
                         </div>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
                                 <span className="text-gray-600 text-xs">4xx Series</span>
                             </div>
-                            <span className="text-gray-900 font-semibold text-xs">--%</span>
+                            <span className="text-gray-900 font-semibold text-xs">
+                                {total > 0 ? `${clientErrorPercent}%` : '--%'}
+                            </span>
                         </div>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
                                 <span className="text-gray-600 text-xs">5xx Series</span>
                             </div>
-                            <span className="text-gray-900 font-semibold text-xs">--%</span>
+                            <span className="text-gray-900 font-semibold text-xs">
+                                {total > 0 ? `${serverErrorPercent}%` : '--%'}
+                            </span>
                         </div>
                     </div>
                 </div>
