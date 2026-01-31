@@ -193,12 +193,7 @@ const Dashboard = () => {
                 {/* Logo */}
                 <div className="p-5 border-b border-gray-700/50">
                     <Link to="/" className="flex items-center gap-2 text-white no-underline">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-7 h-7">
-                            <rect x="3" y="3" width="7" height="7" rx="1.5" fill="#3b82f6" />
-                            <rect x="14" y="3" width="7" height="7" rx="1.5" fill="#3b82f6" opacity="0.7" />
-                            <rect x="3" y="14" width="7" height="7" rx="1.5" fill="#3b82f6" opacity="0.7" />
-                            <rect x="14" y="14" width="7" height="7" rx="1.5" fill="#3b82f6" opacity="0.4" />
-                        </svg>
+                        <img src="/apihub-logo.png" alt="APIHub Logo" className="w-7 h-7 object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
                         <span className="font-semibold text-lg">APIHub</span>
                     </Link>
                 </div>
