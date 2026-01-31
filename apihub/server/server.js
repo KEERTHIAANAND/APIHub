@@ -15,12 +15,28 @@ connectDB();
 
 const app = express();
 
-// CORS configuration
+// CORS configuration - allow multiple frontend ports
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
+    process.env.CLIENT_URL
+].filter(Boolean);
+
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(null, true); // Allow all origins in development
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key']
 }));
 
 // Body parser middleware
@@ -50,7 +66,8 @@ app.use('/api/admin/users', require('./routes/users'));
 app.use('/api/admin/endpoints', require('./routes/endpoints'));
 app.use('/api/admin/datasets', require('./routes/datasets'));
 app.use('/api/admin/access-keys', require('./routes/apiKeys'));
-// app.use('/api/admin/audit', require('./routes/audit'));
+app.use('/api/admin/dashboard-stats', require('./routes/dashboardStats'));
+app.use('/api/admin/audit-logs', require('./routes/auditLogs'));
 
 // Developer Routes (for non-admin users)
 app.use('/api/developer', require('./routes/developer'));
