@@ -19,7 +19,7 @@ const AdminDashboard = () => {
 
     const navItems = [
         { id: 'overview', label: 'Overview', icon: 'grid' },
-        { id: 'api-management', label: 'API Management', icon: 'api' },
+        { id: 'api-management', label: 'Endpoint Management', icon: 'api' },
         { id: 'data-management', label: 'Data Management', icon: 'database' },
         { id: 'access-keys', label: 'Access Keys', icon: 'key' },
         { id: 'audit-logs', label: 'Audit Logs', icon: 'logs' },
@@ -79,7 +79,7 @@ const AdminDashboard = () => {
             case 'overview':
                 return { title: 'Overview', subtitle: 'Monitor your API performance and analytics.' };
             case 'api-management':
-                return { title: 'API Management', subtitle: 'Create and manage your API endpoints.' };
+                return { title: 'Endpoint Management', subtitle: 'Create and manage your API endpoints.' };
             case 'data-management':
                 return { title: 'Data Management', subtitle: 'Upload and configure your datasets.' };
             case 'access-keys':
@@ -116,12 +116,7 @@ const AdminDashboard = () => {
                 {/* Logo */}
                 <div className="p-5 border-b border-gray-700/50">
                     <Link to="/" className="flex items-center gap-2 text-white no-underline">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-7 h-7">
-                            <rect x="3" y="3" width="7" height="7" rx="1.5" fill="#3b82f6" />
-                            <rect x="14" y="3" width="7" height="7" rx="1.5" fill="#3b82f6" opacity="0.7" />
-                            <rect x="3" y="14" width="7" height="7" rx="1.5" fill="#3b82f6" opacity="0.7" />
-                            <rect x="14" y="14" width="7" height="7" rx="1.5" fill="#3b82f6" opacity="0.4" />
-                        </svg>
+                        <img src="/apihub-logo.png" alt="APIHub Logo" className="w-7 h-7 object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
                         <span className="font-semibold text-lg">APIHub</span>
                     </Link>
                 </div>

@@ -1,7 +1,7 @@
 import { useOutletContext } from 'react-router-dom';
 
 const Overview = () => {
-    const { stats, history, formatDate, getMethodColor, getStatusColor, navigate } = useOutletContext();
+    const { stats, history, formatDate, getMethodColor, getStatusColor, navigate, clearHistory } = useOutletContext();
 
     return (
         <div className="p-6 flex-1 overflow-auto">
@@ -70,12 +70,14 @@ const Overview = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                     <h3 className="text-lg font-semibold text-gray-900">Recent Requests</h3>
-                    <button
-                        onClick={() => navigate('/my-keys')}
-                        className="text-sm text-blue-600 hover:text-blue-700 bg-transparent border-none cursor-pointer"
-                    >
-                        View All Keys →
-                    </button>
+                    {history.length > 0 && (
+                        <button
+                            onClick={clearHistory}
+                            className="text-sm text-red-600 hover:text-red-700 bg-transparent border border-red-200 hover:border-red-300 px-3 py-1.5 rounded-lg cursor-pointer transition-all hover:bg-red-50"
+                        >
+                            Clear All
+                        </button>
+                    )}
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full">
