@@ -5,7 +5,8 @@ const {
     getMyApiKeys,
     getMyStats,
     getMyRequestHistory,
-    getMyEndpoints
+    getMyEndpoints,
+    clearRequestHistory
 } = require('../controllers/developerController');
 
 // All routes require authentication
@@ -19,6 +20,9 @@ router.get('/stats', getMyStats);
 
 // Get my request history
 router.get('/history', getMyRequestHistory);
+
+// Clear request history
+router.delete('/history', clearRequestHistory);
 
 // Get available endpoints for my keys
 router.get('/endpoints', getMyEndpoints);

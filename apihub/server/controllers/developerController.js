@@ -198,9 +198,32 @@ const getMyEndpoints = async (req, res) => {
     }
 };
 
+/**
+ * Clear all request history
+ */
+const clearRequestHistory = async (req, res) => {
+    try {
+        // Delete all request logs
+        const result = await RequestLog.deleteMany({});
+
+        res.json({
+            success: true,
+            message: 'Request history cleared successfully',
+            deletedCount: result.deletedCount
+        });
+    } catch (error) {
+        console.error('Clear request history error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to clear request history'
+        });
+    }
+};
+
 module.exports = {
     getMyApiKeys,
     getMyStats,
     getMyRequestHistory,
-    getMyEndpoints
+    getMyEndpoints,
+    clearRequestHistory
 };
