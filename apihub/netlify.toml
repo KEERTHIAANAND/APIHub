@@ -1,5 +1,8 @@
 [build]
-  command = "CI= npm run build"
+  # This command works even if your code is in the root OR in a folder named 'apihub'
+  command = "if [ -f package.json ]; then CI= npm run build; elif [ -d apihub ]; then cd apihub && CI= npm install && CI= npm run build; else echo 'Error: package.json not found'; exit 1; fi"
+  
+  # This tells Netlify where the 'dist' folder ends up
   publish = "dist"
 
 [build.environment]
