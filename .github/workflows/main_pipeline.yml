@@ -58,13 +58,11 @@ jobs:
           npm install
           npm run build
         
-      - name: Upload to Netlify
-        uses: nwtgck/actions-netlify@v2.0
-        with:
-          publish-dir: './apihub/dist'
-          production-branch: main
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Deploy from GitHub Actions"
+      - name: Deploy to Netlify
+        working-directory: ./apihub
+        run: |
+          npm install -g netlify-cli
+          netlify deploy --dir=dist --prod --message="Deploy from GitHub Actions"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
