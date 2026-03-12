@@ -55,4 +55,4 @@ jobs:
         working-directory: ./apihub
         run: |
           npm install -g netlify-cli
-          netlify deploy --dir=dist --prod --site=${{ secrets.NETLIFY_SITE_ID }} --auth=${{ secrets.NETLIFY_AUTH_TOKEN }} --message="Deploy from GitHub Actions"
+          netlify deploy --dir=dist --prod --site=${{ secrets.NETLIFY_SITE_ID }} --auth=${{ secrets.NETLIFY_AUTH_TOKEN }} --message="Deploy from GitHub Actions" --telemetry-disable
