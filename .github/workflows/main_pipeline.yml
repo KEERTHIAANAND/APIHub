@@ -18,15 +18,15 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          # Tell GitHub where to find the lock file for caching
+          cache-dependency-path: apihub/package-lock.json
 
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Run Lint
-        run: npm run lint
-
-      - name: Run Tests
-        run: npm test
+      - name: Install & Test
+        working-directory: ./apihub
+        run: |
+          npm install
+          npm run lint
+          npm test
 
   # 2. THE DEPLOYMENT (Only runs if Quality Check passes)
   deploy:
@@ -44,15 +44,16 @@ jobs:
 
       # --- BACKEND DEPLOY (Railway) ---
       - name: Deploy Backend
+        working-directory: ./apihub/server
         run: |
-          cd server
           npm install -g @railway/cli
           railway up --service apihub-backend -y
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       # --- FRONTEND DEPLOY (Netlify) ---
-      - name: Build and Deploy Frontend
+      - name: Build Frontend
+        working-directory: ./apihub
         run: |
           npm install
           npm run build
@@ -60,7 +61,7 @@ jobs:
       - name: Upload to Netlify
         uses: nwtgck/actions-netlify@v2.0
         with:
-          publish-dir: './dist'
+          publish-dir: './apihub/dist'
           production-branch: main
           github-token: ${{ secrets.GITHUB_TOKEN }}
           deploy-message: "Deploy from GitHub Actions"
