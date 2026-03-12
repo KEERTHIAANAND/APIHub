@@ -64,7 +64,6 @@ export const AuthProvider = ({ children }) => {
             // Read custom claims from the token (optional - for frontend role checking)
             const tokenResult = await firebaseUser.getIdTokenResult();
             const firebaseClaims = tokenResult.claims;
-            console.log('Firebase custom claims:', firebaseClaims);
 
             // Send token to our backend for verification and user creation/login
             const response = await authAPI.firebaseAuth(idToken);
