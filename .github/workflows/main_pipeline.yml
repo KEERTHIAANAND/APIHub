@@ -4,6 +4,11 @@ on:
   push:
     branches: [ main ]
 
+# Explicitly give the pipeline permission to read the code
+permissions:
+  contents: read
+  deployments: write
+
 jobs:
   # 1. THE QUALITY GATES
   quality-check:
