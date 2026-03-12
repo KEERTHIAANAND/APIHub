@@ -52,7 +52,7 @@ jobs:
         working-directory: ./apihub/server
         run: |
           npm install -g @railway/cli
-          railway up --service APIHub
+          railway up --service APIHub --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
