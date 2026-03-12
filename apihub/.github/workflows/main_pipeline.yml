@@ -1,20 +1,46 @@
-name: Deploy
+name: Production Pipeline
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  # This job will ONLY run if the Test and Lint workflows pass
-  # (Note: We'll combine them into this file or use 'workflow_run' for advanced setups,
-  # but for now, let's just make this one handle the logic.)
-
-  deploy:
-    name: Production Deployment
+  # 1. THE QUALITY GATES
+  quality-check:
+    name: Lint & Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Lint
+        run: npm run lint
+
+      - name: Run Tests
+        run: npm test
+
+  # 2. THE DEPLOYMENT (Only runs if Quality Check passes)
+  deploy:
+    name: Production Deployment
+    needs: quality-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
       # --- BACKEND DEPLOY (Railway) ---
       - name: Deploy Backend
@@ -26,8 +52,12 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       # --- FRONTEND DEPLOY (Netlify) ---
-      # We move this back into the Action so we can control when it happens
-      - name: Deploy Frontend
+      - name: Build and Deploy Frontend
+        run: |
+          npm install
+          npm run build
+        
+      - name: Upload to Netlify
         uses: nwtgck/actions-netlify@v2.0
         with:
           publish-dir: './dist'
