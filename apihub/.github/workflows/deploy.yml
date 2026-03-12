@@ -5,11 +5,16 @@ on:
     branches: [ main ]
 
 jobs:
-  # We removed the frontend job because Netlify will handle it automatically
-  # through its own UI integration.
-
+  # We only want to deploy if the other workflows pass!
+  # Note: On GitHub, these names must match the 'name:' field in each file.
   deploy-backend:
     name: Deploy Backend to Railway
+    # This 'needs' block is the SECRET SAUCE. 
+    # It tells GitHub to wait for the other workflows.
+    # Note: For this to work best across separate files, 
+    # the other workflows should be in the same file OR 
+    # we just watch the failure in the Actions tab.
+    # To keep it simple for now, let's just break the test and see it go red.
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
