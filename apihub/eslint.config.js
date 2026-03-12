@@ -29,6 +29,7 @@ export default defineConfig([
       'no-unused-vars': 'warn',
       'no-useless-escape': 'off',
       'no-undef': 'warn',
+      'react-refresh/only-export-components': 'warn',
     },
   },
 ])
