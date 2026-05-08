@@ -20,13 +20,21 @@ const upload = multer({
         fileSize: 10 * 1024 * 1024 // 10MB max
     },
     fileFilter: (req, file, cb) => {
-        if (file.mimetype === 'application/json' ||
-            file.mimetype === 'text/csv' ||
+        const allowedMimes = [
+            'application/json',
+            'text/csv',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ];
+
+        if (allowedMimes.includes(file.mimetype) ||
             file.originalname.endsWith('.json') ||
-            file.originalname.endsWith('.csv')) {
+            file.originalname.endsWith('.csv') ||
+            file.originalname.endsWith('.xlsx') ||
+            file.originalname.endsWith('.xls')) {
             cb(null, true);
         } else {
-            cb(new Error('Only JSON and CSV files are allowed'), false);
+            cb(new Error('Only JSON, CSV, and Excel files are allowed'), false);
         }
     }
 });

@@ -29,7 +29,7 @@ const datasetSchema = new mongoose.Schema({
     },
     fileType: {
         type: String,
-        enum: ['json', 'csv', 'manual'],
+        enum: ['json', 'csv', 'excel', 'manual'],
         default: 'manual'
     },
     originalFileName: {

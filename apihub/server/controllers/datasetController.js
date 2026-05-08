@@ -1,5 +1,6 @@
 const Dataset = require('../models/Dataset');
 const Endpoint = require('../models/Endpoint');
+const xlsx = require('xlsx');
 
 // @desc    Get all datasets
 // @route   GET /api/admin/datasets
@@ -125,10 +126,13 @@ const uploadDataset = async (req, res, next) => {
         }
 
         let parsedData = [];
-        const fileContent = req.file.buffer.toString('utf-8');
-        const fileType = req.file.originalname.endsWith('.csv') ? 'csv' : 'json';
+        const ext = req.file.originalname.split('.').pop().toLowerCase();
+        let fileType = 'json';
+        if (ext === 'csv') fileType = 'csv';
+        else if (ext === 'xlsx' || ext === 'xls') fileType = 'excel';
 
         if (fileType === 'json') {
+            const fileContent = req.file.buffer.toString('utf-8');
             try {
                 parsedData = JSON.parse(fileContent);
                 if (!Array.isArray(parsedData)) {
@@ -141,6 +145,7 @@ const uploadDataset = async (req, res, next) => {
                 });
             }
         } else if (fileType === 'csv') {
+            const fileContent = req.file.buffer.toString('utf-8');
             // Simple CSV parsing
             const lines = fileContent.trim().split('\n');
             if (lines.length < 2) {
@@ -164,6 +169,25 @@ const uploadDataset = async (req, res, next) => {
                     row[header] = value;
                 });
                 parsedData.push(row);
+            }
+        } else if (fileType === 'excel') {
+            try {
+                const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                parsedData = xlsx.utils.sheet_to_json(worksheet);
+                
+                if (!Array.isArray(parsedData) || parsedData.length === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Excel file is empty or invalid'
+                    });
+                }
+            } catch (e) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid Excel file'
+                });
             }
         }
 
