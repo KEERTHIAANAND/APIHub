@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: apihub-backend
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: apihub/server
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRE
+        value: 7d
+      - key: CLIENT_URL
+        value: https://apihub-prod.netlify.app
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false
