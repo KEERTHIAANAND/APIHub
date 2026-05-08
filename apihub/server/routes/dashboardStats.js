@@ -14,22 +14,31 @@ router.use(adminOnly);
 // @access  Admin only
 router.get('/', async (req, res) => {
     try {
+        // Get admin's endpoints
+        const adminEndpoints = await Endpoint.find({ createdBy: req.user._id });
+        const endpointIds = adminEndpoints.map(ep => ep._id);
+
         // Get counts
-        const activeEndpoints = await Endpoint.countDocuments({ isActive: true });
-        const totalRequests = await RequestLog.countDocuments();
+        const activeEndpoints = adminEndpoints.filter(ep => ep.isActive).length;
+        const totalRequests = await RequestLog.countDocuments({ endpointId: { $in: endpointIds } });
 
         // Get average latency
         const latencyAgg = await RequestLog.aggregate([
+            { $match: { endpointId: { $in: endpointIds } } },
             { $group: { _id: null, avgLatency: { $avg: '$latency' } } }
         ]);
         const globalLatency = latencyAgg.length > 0 ? Math.round(latencyAgg[0].avgLatency) : 0;
 
         // Calculate error rate
-        const errorCount = await RequestLog.countDocuments({ statusCode: { $gte: 400 } });
+        const errorCount = await RequestLog.countDocuments({ 
+            endpointId: { $in: endpointIds }, 
+            statusCode: { $gte: 400 } 
+        });
         const errorRate = totalRequests > 0 ? Math.round((errorCount / totalRequests) * 100) : 0;
 
         // Get status code distribution
         const statusAgg = await RequestLog.aggregate([
+            { $match: { endpointId: { $in: endpointIds } } },
             {
                 $group: {
                     _id: {
@@ -59,7 +68,12 @@ router.get('/', async (req, res) => {
         const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
         const trafficAgg = await RequestLog.aggregate([
-            { $match: { timestamp: { $gte: yesterday } } },
+            { 
+                $match: { 
+                    endpointId: { $in: endpointIds },
+                    timestamp: { $gte: yesterday } 
+                } 
+            },
             {
                 $group: {
                     _id: { $hour: '$timestamp' },

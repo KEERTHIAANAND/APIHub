@@ -17,8 +17,12 @@ router.get('/', async (req, res) => {
         const { limit = 100, page = 1, method, status, search } = req.query;
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
+        // Get admin's endpoints
+        const adminEndpoints = await Endpoint.find({ createdBy: req.user._id });
+        const endpointIds = adminEndpoints.map(ep => ep._id);
+
         // Build query filter
-        const filter = {};
+        const filter = { endpointId: { $in: endpointIds } };
 
         if (method && method !== 'all') {
             filter.method = method;
