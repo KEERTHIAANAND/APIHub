@@ -179,12 +179,18 @@ const uploadDataset = async (req, res, next) => {
                 // Convert to array of arrays to find the real header row
                 const rawData = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
                 let headerRowIndex = 0;
-                for (let i = 0; i < rawData.length; i++) {
-                    const validCells = (rawData[i] || []).filter(cell => cell !== null && cell !== undefined && cell !== '');
-                    // We assume a real data table has at least 2 columns
-                    if (validCells.length > 1) {
+                let maxCols = 0;
+                
+                // Scan the first 20 rows to find the row with the most columns (likely the header)
+                for (let i = 0; i < Math.min(rawData.length, 20); i++) {
+                    const validCells = (rawData[i] || []).filter(cell => 
+                        cell !== null && 
+                        cell !== undefined && 
+                        cell.toString().trim() !== ''
+                    );
+                    if (validCells.length > maxCols) {
+                        maxCols = validCells.length;
                         headerRowIndex = i;
-                        break;
                     }
                 }
 
