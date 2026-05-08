@@ -11,7 +11,7 @@ const ApiDocs = () => {
             <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <p className="text-xs text-gray-500 mb-1">Base URL</p>
-                    <code className="text-sm font-mono text-gray-900">http://localhost:5000/api/v1</code>
+                    <code className="text-sm font-mono text-gray-900">{import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/v1</code>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <p className="text-xs text-gray-500 mb-1">Authentication</p>
@@ -27,7 +27,7 @@ const ApiDocs = () => {
                 </div>
                 <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
                     <pre className="text-sm text-slate-700 font-mono overflow-x-auto">{`const api = axios.create({
-  baseURL: 'http://localhost:5000/api/v1',
+  baseURL: '${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/v1',
   headers: { 'X-API-Key': 'your_key' }
 });
 
