@@ -14,9 +14,9 @@ const endpointSchema = new mongoose.Schema({
     },
     // HTTP Method
     method: {
-        type: String,
+        type: [String],
         enum: ['GET', 'POST', 'PUT', 'DELETE'],
-        default: 'GET'
+        default: ['GET']
     },
     // URL path (e.g., /api/v1/products)
     path: {

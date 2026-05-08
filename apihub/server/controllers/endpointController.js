@@ -75,22 +75,24 @@ const createEndpoint = async (req, res, next) => {
             fullPath = '/api/v1' + (fullPath.startsWith('/') ? fullPath : '/' + fullPath);
         }
 
+        const methodArray = Array.isArray(method) && method.length > 0 ? method : [method || 'GET'];
+        
         const existingEndpoint = await Endpoint.findOne({
             path: fullPath,
-            method: method || 'GET'
+            method: { $in: methodArray }
         });
 
         if (existingEndpoint) {
             return res.status(400).json({
                 success: false,
-                error: `Endpoint ${method || 'GET'} ${fullPath} already exists`
+                error: `Endpoint for path ${fullPath} already exists with one of the selected methods`
             });
         }
 
         const endpoint = await Endpoint.create({
             name,
             description,
-            method: method || 'GET',
+            method: methodArray,
             path,
             datasetId,
             responseConfig: responseConfig || {},
@@ -146,7 +148,9 @@ const updateEndpoint = async (req, res, next) => {
         // Update fields
         if (name) endpoint.name = name;
         if (description !== undefined) endpoint.description = description;
-        if (method) endpoint.method = method;
+        if (method) {
+            endpoint.method = Array.isArray(method) && method.length > 0 ? method : [method];
+        }
         if (path) endpoint.path = path;
         if (responseConfig) endpoint.responseConfig = { ...endpoint.responseConfig, ...responseConfig };
         if (rateLimit) endpoint.rateLimit = rateLimit;

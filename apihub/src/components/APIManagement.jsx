@@ -17,7 +17,7 @@ const APIManagement = () => {
         name: '',
         description: '',
         path: '',
-        method: 'GET',
+        method: ['GET'],
         isActive: true
     });
 
@@ -143,7 +143,7 @@ const APIManagement = () => {
             name: '',
             description: '',
             path: '',
-            method: 'GET',
+            method: ['GET'],
             isActive: true
         });
     };
@@ -237,10 +237,12 @@ const APIManagement = () => {
                         </div>
 
                         {/* Method */}
-                        <div className="flex items-center">
-                            <span className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${getMethodBadgeColor(endpoint.method)}`}>
-                                {endpoint.method}
-                            </span>
+                        <div className="flex items-center gap-1 flex-wrap">
+                            {(Array.isArray(endpoint.method) ? endpoint.method : [endpoint.method]).map(m => (
+                                <span key={m} className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${getMethodBadgeColor(m)}`}>
+                                    {m}
+                                </span>
+                            ))}
                         </div>
 
                         {/* State */}
@@ -405,8 +407,19 @@ const APIManagement = () => {
                                         <button
                                             key={method}
                                             type="button"
-                                            onClick={() => setFormData(prev => ({ ...prev, method }))}
-                                            className={`px-3 py-2 rounded-lg text-xs font-medium border cursor-pointer transition-all ${formData.method === method
+                                            onClick={() => {
+                                                setFormData(prev => {
+                                                    const currentMethods = Array.isArray(prev.method) ? prev.method : [prev.method];
+                                                    if (currentMethods.includes(method)) {
+                                                        if (currentMethods.length === 1) return prev; // prevent empty
+                                                        return { ...prev, method: currentMethods.filter(m => m !== method) };
+                                                    } else {
+                                                        return { ...prev, method: [...currentMethods, method] };
+                                                    }
+                                                });
+                                            }}
+                                            className={`px-3 py-2 rounded-lg text-xs font-medium border cursor-pointer transition-all ${
+                                                (Array.isArray(formData.method) ? formData.method : [formData.method]).includes(method)
                                                 ? getMethodBadgeColor(method)
                                                 : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
                                                 }`}
