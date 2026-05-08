@@ -8,11 +8,8 @@ const Endpoint = require('../models/Endpoint');
  */
 const getMyApiKeys = async (req, res) => {
     try {
-        // Get ONLY active API keys assigned to this user
-        const apiKeys = await ApiKey.find({ 
-            status: 'active',
-            assignedTo: req.user._id
-        })
+        // Get ALL active API keys (not filtered by user)
+        const apiKeys = await ApiKey.find({ status: 'active' })
             .populate('endpoints', 'name path method')
             .sort({ createdAt: -1 });
 
@@ -49,12 +46,8 @@ const getMyApiKeys = async (req, res) => {
  */
 const getMyStats = async (req, res) => {
     try {
-        // Get ONLY API keys assigned to this user
-        const apiKeys = await ApiKey.find({ 
-            status: 'active',
-            assignedTo: req.user._id
-        });
-        const apiKeyIds = apiKeys.map(k => k._id);
+        // Get ALL active API keys for the total count
+        const apiKeys = await ApiKey.find({ status: 'active' });
 
         // Get request logs for all keys
         const thirtyDaysAgo = new Date();
@@ -63,7 +56,7 @@ const getMyStats = async (req, res) => {
         const stats = await RequestLog.aggregate([
             {
                 $match: {
-                    apiKeyId: { $in: apiKeyIds },
+                    userId: req.user._id,
                     timestamp: { $gte: thirtyDaysAgo }
                 }
             },
@@ -86,7 +79,7 @@ const getMyStats = async (req, res) => {
         const dailyUsage = await RequestLog.aggregate([
             {
                 $match: {
-                    apiKeyId: { $in: apiKeyIds },
+                    userId: req.user._id,
                     timestamp: { $gte: thirtyDaysAgo }
                 }
             },
@@ -142,18 +135,14 @@ const getMyRequestHistory = async (req, res) => {
         const { limit = 50, page = 1 } = req.query;
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
-        // Get user's keys to filter logs
-        const apiKeys = await ApiKey.find({ assignedTo: req.user._id });
-        const apiKeyIds = apiKeys.map(k => k._id);
-
-        const logs = await RequestLog.find({ apiKeyId: { $in: apiKeyIds } })
+        const logs = await RequestLog.find({ userId: req.user._id })
             .populate('apiKeyId', 'name keyPrefix')
             .populate('endpointId', 'name path')
             .sort({ timestamp: -1 })
             .skip(skip)
             .limit(parseInt(limit));
 
-        const total = await RequestLog.countDocuments({ apiKeyId: { $in: apiKeyIds } });
+        const total = await RequestLog.countDocuments({ userId: req.user._id });
 
         res.json({
             success: true,
@@ -186,35 +175,9 @@ const getMyRequestHistory = async (req, res) => {
  */
 const getMyEndpoints = async (req, res) => {
     try {
-        // Get user's keys to find which endpoints they can access
-        const apiKeys = await ApiKey.find({ 
-            status: 'active',
-            assignedTo: req.user._id
-        });
-
-        let allowedEndpointIds = new Set();
-        let hasAllAccess = false;
-        let adminIds = new Set();
-
-        for (const key of apiKeys) {
-            adminIds.add(key.createdBy.toString());
-            if (key.accessLevel === 'all') {
-                hasAllAccess = true;
-            } else if (key.endpoints) {
-                key.endpoints.forEach(ep => allowedEndpointIds.add(ep.toString()));
-            }
-        }
-
-        let query = { isActive: true };
-        
-        if (!hasAllAccess) {
-            query._id = { $in: Array.from(allowedEndpointIds) };
-        } else {
-            // If they have "all" access, they can access all endpoints created by the admins who gave them keys
-            query.createdBy = { $in: Array.from(adminIds) };
-        }
-
-        const endpoints = await Endpoint.find(query).sort({ createdAt: -1 });
+        // Get all active endpoints
+        const endpoints = await Endpoint.find({ isActive: true })
+            .sort({ createdAt: -1 });
 
         res.json({
             success: true,
@@ -241,11 +204,8 @@ const getMyEndpoints = async (req, res) => {
  */
 const clearRequestHistory = async (req, res) => {
     try {
-        // Delete request logs only for this user's keys
-        const apiKeys = await ApiKey.find({ assignedTo: req.user._id });
-        const apiKeyIds = apiKeys.map(k => k._id);
-
-        const result = await RequestLog.deleteMany({ apiKeyId: { $in: apiKeyIds } });
+        // Delete request logs only for this specific developer
+        const result = await RequestLog.deleteMany({ userId: req.user._id });
 
         res.json({
             success: true,

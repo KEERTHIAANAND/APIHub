@@ -1,5 +1,6 @@
 const ApiKey = require('../models/ApiKey');
 const RequestLog = require('../models/RequestLog');
+const jwt = require('jsonwebtoken');
 
 /**
  * Middleware to validate API keys for the gateway
@@ -48,9 +49,22 @@ const validateApiKey = async (req, res, next) => {
         // TODO: Implement proper rate limiting with Redis
         // For now, we'll skip rate limiting or use a simple in-memory approach
 
+        // Optional: Check if a JWT token is provided to identify the specific developer (e.g. from Playground)
+        let gatewayUserId = null;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+            try {
+                const token = req.headers.authorization.split(' ')[1];
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                gatewayUserId = decoded.id;
+            } catch (err) {
+                // Ignore JWT error in gateway, we rely on the API key anyway
+            }
+        }
+
         // Attach API key info to request
         req.apiKey = apiKey;
         req.requestStartTime = startTime;
+        req.gatewayUserId = gatewayUserId;
 
         next();
     } catch (error) {
@@ -73,7 +87,7 @@ const logRequest = async (req, res, statusCode, endpointId = null) => {
         await RequestLog.logRequest({
             apiKeyId: req.apiKey._id,
             endpointId: endpointId,
-            userId: req.apiKey.assignedTo?._id || null,
+            userId: req.gatewayUserId || req.apiKey.assignedTo?._id || null,
             method: req.method,
             path: req.path,
             queryParams: req.query,

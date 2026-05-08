@@ -100,6 +100,12 @@ const ApiPlayground = () => {
                 }
             }
 
+            // Send JWT to track developer-specific analytics in shared environment
+            const token = localStorage.getItem('token');
+            if (token) {
+                requestHeaders['Authorization'] = `Bearer ${token}`;
+            }
+
             const options = { method, headers: requestHeaders };
 
             if (method !== 'GET' && method !== 'HEAD' && body.trim()) {
