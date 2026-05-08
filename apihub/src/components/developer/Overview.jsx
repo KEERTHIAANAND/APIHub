@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import ConfirmModal from '../ConfirmModal';
 
 const Overview = () => {
     const { stats, history, formatDate, getMethodColor, getStatusColor, navigate, clearHistory } = useOutletContext();
+    const [showConfirm, setShowConfirm] = useState(false);
 
     return (
         <div className="p-6 flex-1 overflow-auto">
@@ -72,7 +75,7 @@ const Overview = () => {
                     <h3 className="text-lg font-semibold text-gray-900">Recent Requests</h3>
                     {history.length > 0 && (
                         <button
-                            onClick={clearHistory}
+                            onClick={() => setShowConfirm(true)}
                             className="text-sm text-red-600 hover:text-red-700 bg-transparent border border-red-200 hover:border-red-300 px-3 py-1.5 rounded-lg cursor-pointer transition-all hover:bg-red-50"
                         >
                             Clear All
@@ -116,6 +119,15 @@ const Overview = () => {
                     </table>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={showConfirm}
+                onClose={() => setShowConfirm(false)}
+                onConfirm={clearHistory}
+                title="Clear Request History"
+                message="Are you sure you want to clear your entire request history? This will also reset your statistics to zero. This action cannot be undone."
+                confirmText="Clear History"
+            />
         </div>
     );
 };

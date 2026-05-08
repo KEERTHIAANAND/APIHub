@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
+import ConfirmModal from './ConfirmModal';
 
 const AccessKeys = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -13,6 +14,8 @@ const AccessKeys = () => {
     const [endpoints, setEndpoints] = useState([]);
     const [apiKeys, setApiKeys] = useState([]);
     const [users, setUsers] = useState([]);
+    const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, keyId: null });
+    const [regenerateConfirm, setRegenerateConfirm] = useState({ isOpen: false, keyId: null });
 
     const [formData, setFormData] = useState({
         name: '',
@@ -71,9 +74,12 @@ const AccessKeys = () => {
         }
     };
 
-    const handleRegenerateKey = async (keyId) => {
-        if (!confirm('Are you sure? This will invalidate the old key.')) return;
+    const handleRegenerateKey = (keyId) => {
+        setRegenerateConfirm({ isOpen: true, keyId });
+    };
 
+    const executeRegenerate = async () => {
+        const keyId = regenerateConfirm.keyId;
         try {
             const response = await adminAPI.regenerateAccessKey(keyId);
             if (response.success) {
@@ -101,9 +107,12 @@ const AccessKeys = () => {
         }
     };
 
-    const handleDeleteKey = async (keyId) => {
-        if (!confirm('Are you sure you want to delete this API key?')) return;
+    const handleDeleteKey = (keyId) => {
+        setDeleteConfirm({ isOpen: true, keyId });
+    };
 
+    const executeDelete = async () => {
+        const keyId = deleteConfirm.keyId;
         try {
             const response = await adminAPI.deleteAccessKey(keyId);
             if (response.success) {
@@ -556,6 +565,25 @@ const AccessKeys = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({ isOpen: false, keyId: null })}
+                onConfirm={executeDelete}
+                title="Delete API Key"
+                message="Are you sure you want to delete this API key? Any applications using it will immediately lose access."
+                confirmText="Delete Key"
+            />
+
+            <ConfirmModal
+                isOpen={regenerateConfirm.isOpen}
+                onClose={() => setRegenerateConfirm({ isOpen: false, keyId: null })}
+                onConfirm={executeRegenerate}
+                title="Regenerate API Key"
+                message="Are you sure you want to regenerate this key? The old key will immediately become invalid."
+                confirmText="Regenerate"
+                confirmStyle="warning"
+            />
         </div>
     );
 };

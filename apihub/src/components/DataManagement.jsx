@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { adminAPI } from '../services/api';
+import ConfirmModal from './ConfirmModal';
 
 const DataManagement = () => {
     const [showModal, setShowModal] = useState(false);
@@ -11,6 +12,7 @@ const DataManagement = () => {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState(null);
     const fileInputRef = useRef(null);
+    const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, datasetId: null });
 
     // Datasets state - fetched from backend
     const [datasets, setDatasets] = useState([]);
@@ -251,9 +253,12 @@ const DataManagement = () => {
         }
     };
 
-    const handleDeleteDataset = async (datasetId) => {
-        if (!confirm('Are you sure you want to delete this dataset?')) return;
+    const handleDeleteDataset = (datasetId) => {
+        setDeleteConfirm({ isOpen: true, datasetId });
+    };
 
+    const executeDelete = async () => {
+        const datasetId = deleteConfirm.datasetId;
         try {
             const response = await adminAPI.deleteDataset(datasetId);
             if (response.success) {
@@ -797,6 +802,15 @@ const DataManagement = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({ isOpen: false, datasetId: null })}
+                onConfirm={executeDelete}
+                title="Delete Dataset"
+                message="Are you sure you want to delete this dataset? This action cannot be undone."
+                confirmText="Delete Dataset"
+            />
         </div>
     );
 };

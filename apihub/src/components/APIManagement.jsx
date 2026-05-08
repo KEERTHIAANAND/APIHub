@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
+import ConfirmModal from './ConfirmModal';
 
 const APIManagement = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -9,6 +10,7 @@ const APIManagement = () => {
     const [error, setError] = useState(null);
     const [datasets, setDatasets] = useState([]);
     const [endpoints, setEndpoints] = useState([]);
+    const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, endpointId: null });
 
     const [formData, setFormData] = useState({
         datasetId: '',
@@ -116,9 +118,12 @@ const APIManagement = () => {
         }
     };
 
-    const handleDeleteEndpoint = async (endpointId) => {
-        if (!confirm('Are you sure you want to delete this endpoint?')) return;
+    const handleDeleteEndpoint = (endpointId) => {
+        setDeleteConfirm({ isOpen: true, endpointId });
+    };
 
+    const executeDelete = async () => {
+        const endpointId = deleteConfirm.endpointId;
         try {
             const response = await adminAPI.deleteEndpoint(endpointId);
             if (response.success) {
@@ -433,6 +438,15 @@ const APIManagement = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({ isOpen: false, endpointId: null })}
+                onConfirm={executeDelete}
+                title="Delete Endpoint"
+                message="Are you sure you want to delete this endpoint? Any applications using this endpoint will fail."
+                confirmText="Delete Endpoint"
+            />
         </div>
     );
 };
