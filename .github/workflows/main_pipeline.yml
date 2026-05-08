@@ -44,8 +44,12 @@ jobs:
       # --- BACKEND DEPLOY (Render) ---
       - name: Deploy Backend to Render
         run: |
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
-          echo "✅ Render deploy hook triggered"
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            echo "⚠️ RENDER_DEPLOY_HOOK_URL secret is not set. Skipping automatic Render deployment. You can manually deploy from the Render dashboard."
+          else
+            curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+            echo "✅ Render deploy hook triggered"
+          fi
 
       # --- FRONTEND DEPLOY (Netlify) ---
       - name: Build and Deploy Frontend
