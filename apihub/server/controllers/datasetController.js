@@ -175,7 +175,21 @@ const uploadDataset = async (req, res, next) => {
                 const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
-                parsedData = xlsx.utils.sheet_to_json(worksheet);
+
+                // Convert to array of arrays to find the real header row
+                const rawData = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
+                let headerRowIndex = 0;
+                for (let i = 0; i < rawData.length; i++) {
+                    const validCells = (rawData[i] || []).filter(cell => cell !== null && cell !== undefined && cell !== '');
+                    // We assume a real data table has at least 2 columns
+                    if (validCells.length > 1) {
+                        headerRowIndex = i;
+                        break;
+                    }
+                }
+
+                // Parse again starting from the found header row
+                parsedData = xlsx.utils.sheet_to_json(worksheet, { range: headerRowIndex });
                 
                 if (!Array.isArray(parsedData) || parsedData.length === 0) {
                     return res.status(400).json({
