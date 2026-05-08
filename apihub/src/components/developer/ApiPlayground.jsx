@@ -52,7 +52,7 @@ const ApiPlayground = () => {
             const ep = availableEndpoints.find(ep => ep.path === endpointPath);
             if (ep) {
                 setCustomUrl(`${API_BASE}${ep.path}`);
-                setMethod(ep.method);
+                setMethod(Array.isArray(ep.method) ? ep.method[0] : ep.method);
             }
         } else {
             setCustomUrl('');
@@ -159,7 +159,7 @@ const ApiPlayground = () => {
                                 <option value="">Choose an endpoint...</option>
                                 {availableEndpoints.map((ep, idx) => (
                                     <option key={idx} value={ep.path}>
-                                        [{ep.method}] {ep.path}
+                                        [{Array.isArray(ep.method) ? ep.method.join(', ') : ep.method}] {ep.path}
                                     </option>
                                 ))}
                             </select>
