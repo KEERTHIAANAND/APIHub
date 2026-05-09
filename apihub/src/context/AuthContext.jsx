@@ -10,7 +10,6 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Check for existing session on app load
     useEffect(() => {
         const checkAuth = async () => {
             const token = localStorage.getItem('token');
@@ -21,7 +20,6 @@ export const AuthProvider = ({ children }) => {
                         setUser(response.user);
                     }
                 } catch (err) {
-                    // Token invalid or expired
                     localStorage.removeItem('token');
                 }
             }
@@ -31,7 +29,6 @@ export const AuthProvider = ({ children }) => {
         checkAuth();
     }, []);
 
-    // Manual login with email/password
     const login = async (email, password) => {
         try {
             setError(null);
@@ -48,34 +45,25 @@ export const AuthProvider = ({ children }) => {
             return { success: false, error: err.message };
         }
     };
-
-    // Login with Google via Firebase
     const loginWithGoogle = async () => {
         try {
             setError(null);
 
-            // Sign in with Firebase Google popup
             const result = await signInWithPopup(auth, googleProvider);
             const firebaseUser = result.user;
 
-            // Get Firebase ID token with custom claims
-            const idToken = await firebaseUser.getIdToken(true); // force refresh to get latest claims
+            const idToken = await firebaseUser.getIdToken(true); 
 
-            // Read custom claims from the token (optional - for frontend role checking)
             const tokenResult = await firebaseUser.getIdTokenResult();
             const firebaseClaims = tokenResult.claims;
 
-            // Send token to our backend for verification and user creation/login
             const response = await authAPI.firebaseAuth(idToken);
 
             if (response.success) {
                 localStorage.setItem('token', response.token);
 
-                // Use role from backend response (MongoDB) as primary source
-                // Firebase claims are synced with MongoDB role
                 const userWithRole = {
                     ...response.user,
-                    // If Firebase has a role claim, it should match MongoDB
                     firebaseRole: firebaseClaims.role || null
                 };
 
@@ -87,8 +75,6 @@ export const AuthProvider = ({ children }) => {
         } catch (err) {
             console.error('Google login error:', err);
             setError(err.message);
-
-            // Handle specific Firebase errors
             if (err.code === 'auth/popup-closed-by-user') {
                 return { success: false, error: 'Login cancelled' };
             }
@@ -100,7 +86,6 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // Sign up with email/password
     const signup = async (fullName, email, password) => {
         try {
             setError(null);
@@ -122,31 +107,23 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // Logout
     const logout = async () => {
         try {
-            // Sign out from Firebase if signed in via Google
             if (auth.currentUser) {
                 await signOut(auth);
             }
-
-            // Clear local storage
             localStorage.removeItem('token');
             setUser(null);
         } catch (err) {
             console.error('Logout error:', err);
-            // Still clear local state even if Firebase signout fails
             localStorage.removeItem('token');
             setUser(null);
         }
     };
-
-    // Check if user is admin
     const isAdmin = () => {
         return user?.role === 'admin';
     };
 
-    // Loading state while checking auth
     if (loading) {
         return (
             <div className="h-screen w-full flex items-center justify-center bg-gray-100">
